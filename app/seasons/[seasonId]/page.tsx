@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { EpisodeCard } from "@/components/library/episode-card";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
-import { ListRow } from "@/components/ui/list-row";
+import { EmptyState } from "@/components/ui/empty-state";
 import { PageSkeleton } from "@/components/ui/page-skeleton";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { plural, seasonTitle } from "@/lib/format";
+import { seasonTitle } from "@/lib/format";
 import { getSeason } from "@/lib/queries/library";
 
 type Params = PageProps<"/seasons/[seasonId]">["params"];
@@ -17,24 +17,17 @@ async function Season({ params }: { params: Params }) {
   return (
     <>
       <Breadcrumbs crumbs={[{ label: "Library", href: "/" }]} />
-      <p className="text-sm font-medium text-primary">{season.seriesTitle}</p>
-      <h1 className="mb-6 text-3xl font-semibold">{seasonTitle(season)}</h1>
+      <p className="eyebrow text-primary-strong">{season.seriesTitle}</p>
+      <h1 className="text-gradient mb-8 w-fit text-4xl font-bold tracking-tight sm:text-5xl">
+        {seasonTitle(season)}
+      </h1>
 
       {season.episodes.length === 0 ? (
-        <p className="card p-8 text-center text-ink/70">No episodes yet.</p>
+        <EmptyState title="No episodes yet" />
       ) : (
-        <ol className="space-y-3">
-          {season.episodes.map((episode) => (
-            <ListRow key={episode.id} href={`/episodes/${episode.id}`}>
-              <span className="w-8 font-heading text-xl font-semibold text-primary">
-                {episode.number}
-              </span>
-              <span className="flex-1 font-medium">{episode.title}</span>
-              <span className="hidden text-sm text-ink/60 sm:inline">
-                {plural(episode.sceneCount, "scene")}
-              </span>
-              <StatusBadge status={episode.status} />
-            </ListRow>
+        <ol className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {season.episodes.map((episode, index) => (
+            <EpisodeCard key={episode.id} episode={episode} index={index} />
           ))}
         </ol>
       )}
@@ -44,7 +37,7 @@ async function Season({ params }: { params: Params }) {
 
 export default function SeasonPage({ params }: PageProps<"/seasons/[seasonId]">) {
   return (
-    <Suspense fallback={<PageSkeleton />}>
+    <Suspense fallback={<PageSkeleton shape="cards" />}>
       <Season params={params} />
     </Suspense>
   );

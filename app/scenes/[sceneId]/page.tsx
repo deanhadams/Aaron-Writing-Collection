@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { SceneBar } from "@/components/script/scene-bar";
 import { ScriptBeat } from "@/components/script/script-beat";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { PageSkeleton } from "@/components/ui/page-skeleton";
@@ -15,6 +15,7 @@ async function Scene({ params }: { params: Params }) {
   if (!scene) notFound();
 
   const season = { number: scene.seasonNumber, title: scene.seasonTitle };
+  const title = sceneTitle(scene);
   const slugline = [scene.timecode && `(${scene.timecode})`, scene.location]
     .filter(Boolean)
     .join(" ");
@@ -32,19 +33,21 @@ async function Scene({ params }: { params: Params }) {
         ]}
       />
 
-      <article className="card mx-auto max-w-3xl px-6 py-10 font-script text-[17px] leading-relaxed sm:px-14">
-        <header className="mb-8 border-b border-line pb-6 text-center">
+      <SceneBar title={title} previous={scene.previous} next={scene.next} />
+
+      <article className="script-page rise mx-auto max-w-3xl px-5 py-10 font-script text-[17px] leading-relaxed sm:px-20 sm:py-16">
+        <header className="mb-10 text-center">
           {scene.title && (
-            <p className="font-sans text-xs font-medium uppercase tracking-wide text-primary">
+            <p className="eyebrow font-sans text-primary-strong">
               {SCENE_KIND_LABELS[scene.kind]}
             </p>
           )}
-          <h1 className="mt-1 text-2xl font-semibold">{sceneTitle(scene)}</h1>
-          {slugline && <p className="mt-2 font-bold">{slugline}</p>}
+          <h1 className="mt-1 text-3xl font-bold tracking-tight">{title}</h1>
+          {slugline && <p className="mt-3 font-bold">{slugline}</p>}
         </header>
 
         {scene.beats.length === 0 ? (
-          <p className="text-center text-ink/60">This scene is empty.</p>
+          <p className="text-center text-muted">This scene is empty.</p>
         ) : (
           scene.beats.map((beat) => (
             <ScriptBeat
@@ -55,31 +58,13 @@ async function Scene({ params }: { params: Params }) {
           ))
         )}
       </article>
-
-      <nav
-        aria-label="Scenes in this episode"
-        className="mx-auto mt-6 flex max-w-3xl justify-between gap-4 text-sm"
-      >
-        {scene.previous ? (
-          <Link href={`/scenes/${scene.previous.id}`} className="text-primary hover:underline">
-            ← {sceneTitle(scene.previous)}
-          </Link>
-        ) : (
-          <span />
-        )}
-        {scene.next && (
-          <Link href={`/scenes/${scene.next.id}`} className="text-right text-primary hover:underline">
-            {sceneTitle(scene.next)} →
-          </Link>
-        )}
-      </nav>
     </>
   );
 }
 
 export default function ScenePage({ params }: PageProps<"/scenes/[sceneId]">) {
   return (
-    <Suspense fallback={<PageSkeleton />}>
+    <Suspense fallback={<PageSkeleton shape="script" />}>
       <Scene params={params} />
     </Suspense>
   );

@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { SceneTimeline } from "@/components/library/scene-timeline";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
-import { ListRow } from "@/components/ui/list-row";
+import { EmptyState } from "@/components/ui/empty-state";
 import { PageSkeleton } from "@/components/ui/page-skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { SCENE_KIND_LABELS, sceneTitle, seasonTitle } from "@/lib/format";
+import { seasonTitle } from "@/lib/format";
 import { getEpisode } from "@/lib/queries/library";
 
 type Params = PageProps<"/episodes/[episodeId]">["params"];
@@ -24,45 +25,26 @@ async function Episode({ params }: { params: Params }) {
           { label: seasonTitle(season), href: `/seasons/${episode.seasonId}` },
         ]}
       />
-      <p className="text-sm font-medium text-primary">
-        Episode {episode.number}
-      </p>
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-3xl font-semibold">{episode.title}</h1>
+      <div className="flex items-center gap-3">
+        <p className="eyebrow text-primary-strong">Episode {episode.number}</p>
         <StatusBadge status={episode.status} />
       </div>
+      <h1 className="text-gradient mt-1 w-fit text-4xl font-bold tracking-tight sm:text-5xl">
+        {episode.title}
+      </h1>
       {episode.summary && (
-        <p className="mt-3 max-w-2xl text-ink/70">{episode.summary}</p>
+        <p className="mt-3 max-w-2xl text-lg text-muted">{episode.summary}</p>
       )}
 
-      {episode.scenes.length === 0 ? (
-        <p className="card mt-6 p-8 text-center text-ink/70">No scenes yet.</p>
-      ) : (
-        <ol className="mt-6 space-y-3">
-          {episode.scenes.map((scene) => (
-            <ListRow key={scene.id} href={`/scenes/${scene.id}`}>
-              <span className="flex-1">
-                {scene.title && (
-                  <span className="block text-xs font-medium uppercase tracking-wide text-primary">
-                    {SCENE_KIND_LABELS[scene.kind]}
-                  </span>
-                )}
-                <span className="block font-medium">{sceneTitle(scene)}</span>
-                {scene.location && (
-                  <span className="block font-script text-sm text-ink/60">
-                    {scene.location}
-                  </span>
-                )}
-              </span>
-              {scene.timecode && (
-                <span className="font-script text-sm text-ink/60">
-                  {scene.timecode}
-                </span>
-              )}
-            </ListRow>
-          ))}
-        </ol>
-      )}
+      <div className="mt-8">
+        {episode.scenes.length === 0 ? (
+          <EmptyState title="No scenes yet" />
+        ) : (
+          <div className="max-w-3xl">
+            <SceneTimeline scenes={episode.scenes} />
+          </div>
+        )}
+      </div>
     </>
   );
 }
@@ -71,7 +53,7 @@ export default function EpisodePage({
   params,
 }: PageProps<"/episodes/[episodeId]">) {
   return (
-    <Suspense fallback={<PageSkeleton />}>
+    <Suspense fallback={<PageSkeleton shape="timeline" />}>
       <Episode params={params} />
     </Suspense>
   );

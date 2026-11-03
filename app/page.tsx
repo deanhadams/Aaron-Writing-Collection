@@ -1,5 +1,7 @@
 import { Suspense } from "react";
+import { Hero } from "@/components/library/hero";
 import { SeasonCard } from "@/components/library/season-card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { PageSkeleton } from "@/components/ui/page-skeleton";
 import { getSeasonCards } from "@/lib/queries/library";
 
@@ -8,16 +10,16 @@ async function SeasonGrid() {
 
   if (seasons.length === 0) {
     return (
-      <p className="card p-8 text-center text-ink/70">
-        No seasons yet. They will appear here once a script is imported.
-      </p>
+      <EmptyState title="No seasons yet">
+        They will appear here once a script is imported.
+      </EmptyState>
     );
   }
 
   return (
-    <div className="grid gap-5 sm:grid-cols-2">
-      {seasons.map((season) => (
-        <SeasonCard key={season.id} season={season} />
+    <div className="grid gap-6 sm:grid-cols-2">
+      {seasons.map((season, index) => (
+        <SeasonCard key={season.id} season={season} index={index} />
       ))}
     </div>
   );
@@ -26,8 +28,8 @@ async function SeasonGrid() {
 export default function HomePage() {
   return (
     <>
-      <h1 className="mb-6 text-3xl font-semibold">Library</h1>
-      <Suspense fallback={<PageSkeleton />}>
+      <Hero />
+      <Suspense fallback={<PageSkeleton shape="covers" />}>
         <SeasonGrid />
       </Suspense>
     </>

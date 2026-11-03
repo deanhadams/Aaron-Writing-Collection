@@ -1,10 +1,28 @@
-export function PageSkeleton() {
+const SHAPES = {
+  covers: { list: "grid gap-6 sm:grid-cols-2", item: "h-80 rounded-2xl" },
+  cards: { list: "grid gap-5 sm:grid-cols-2 lg:grid-cols-3", item: "h-44 rounded-2xl" },
+  timeline: { list: "space-y-4 pl-7", item: "h-28 rounded-2xl" },
+  script: { list: "mx-auto max-w-3xl", item: "h-[32rem] rounded-xl" },
+};
+
+const COUNTS = { covers: 2, cards: 6, timeline: 4, script: 1 };
+
+export function PageSkeleton({ shape }: { shape: keyof typeof SHAPES }) {
+  const { list, item } = SHAPES[shape];
+
   return (
-    <div aria-hidden className="animate-pulse space-y-4">
-      <div className="h-4 w-48 rounded bg-line" />
-      <div className="h-9 w-72 rounded bg-line" />
-      <div className="h-24 rounded-2xl bg-line/60" />
-      <div className="h-24 rounded-2xl bg-line/60" />
+    <div aria-hidden>
+      {shape !== "covers" && (
+        <>
+          <div className="skeleton mb-6 h-4 w-48 rounded" />
+          <div className="skeleton mb-8 h-11 w-72 max-w-full rounded-lg" />
+        </>
+      )}
+      <div className={list}>
+        {Array.from({ length: COUNTS[shape] }, (_, index) => (
+          <div key={index} className={`skeleton ${item}`} />
+        ))}
+      </div>
     </div>
   );
 }

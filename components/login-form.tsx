@@ -3,9 +3,6 @@
 import { useActionState } from "react";
 import { login } from "@/lib/auth/actions";
 
-const fieldClass =
-  "mt-1 w-full rounded-lg border border-line bg-white px-3 py-2 focus:border-primary";
-
 export function LoginForm({ next }: { next?: string }) {
   const [state, formAction, pending] = useActionState(login, { error: null });
 
@@ -20,7 +17,7 @@ export function LoginForm({ next }: { next?: string }) {
           type="email"
           autoComplete="email"
           required
-          className={fieldClass}
+          className="field"
         />
       </label>
 
@@ -31,7 +28,7 @@ export function LoginForm({ next }: { next?: string }) {
           type="password"
           autoComplete="current-password"
           required
-          className={fieldClass}
+          className="field"
         />
       </label>
 
@@ -41,11 +38,7 @@ export function LoginForm({ next }: { next?: string }) {
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-lg bg-primary px-4 py-2 font-medium text-white transition-shadow hover:shadow-neon disabled:opacity-60"
-      >
+      <button type="submit" disabled={pending} className="btn-primary w-full">
         {pending ? "Signing in…" : "Sign in"}
       </button>
     </form>

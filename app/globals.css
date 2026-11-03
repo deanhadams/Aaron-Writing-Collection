@@ -1,27 +1,61 @@
 @import "tailwindcss";
 
+/* ---- Tokens (documented in CLAUDE.md) ---- */
+
 @theme {
   --color-background: #f5f9ff;
   --color-primary: #2563ff;
+  --color-primary-strong: #1a45c4;
   --color-neon: #00d9ff;
+  --color-violet: #7c5cff;
+  --color-pink: #ff4fa3;
   --color-ink: #0b1b3a;
+  --color-muted: #475372;
   --color-line: #d6e4ff;
+
+  --color-status-idea: #5b3bd6;
+  --color-status-drafting: #0b6a85;
+  --color-status-done: #0b6b3c;
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
   --font-script: var(--font-courier-prime), "Courier New", monospace;
 
-  --shadow-neon: 0 0 0 1px rgb(0 217 255 / 0.35), 0 0 16px rgb(0 217 255 / 0.25);
+  --shadow-soft: 0 8px 24px -12px rgb(37 99 255 / 0.25);
+  --shadow-glow: 0 10px 32px -8px rgb(124 92 255 / 0.45), 0 0 18px rgb(0 217 255 / 0.3);
+  --shadow-page: 0 24px 60px -24px rgb(37 99 255 / 0.35), 0 4px 16px -8px rgb(124 92 255 / 0.2);
+
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 :root {
   color-scheme: light;
+
+  /* Exact brand colors: decoration only (borders, bars, glows, art). */
+  --gradient-signature: linear-gradient(120deg, #2563ff, #7c5cff 55%, #00d9ff);
+  --gradient-cover: linear-gradient(
+    var(--cover-angle, 135deg),
+    #2563ff,
+    #7c5cff 45%,
+    #ff4fa3 75%,
+    #00d9ff
+  );
+
+  /* Same hues, deepened until they pass WCAG AA with text. */
+  --gradient-text: linear-gradient(110deg, #1d4ed8, #6236e8 55%, #0e7490);
+  --gradient-text-shift: linear-gradient(110deg, #0e7490, #1d4ed8 45%, #6236e8);
+  --gradient-button: linear-gradient(115deg, #2563ff, #6b46f5 60%, #0a78b5);
+}
+
+html {
+  /* Keeps the page from jumping sideways between short and long pages. */
+  overflow-y: scroll;
 }
 
 body {
-  background:
-    radial-gradient(60rem 24rem at 50% -8rem, rgb(0 217 255 / 0.12), transparent) no-repeat,
-    var(--color-background);
+  /* The hero glow can reach past the edges without adding a scrollbar. */
+  overflow-x: clip;
+  background: var(--color-background);
   color: var(--color-ink);
   font-family: var(--font-sans);
 }
@@ -34,25 +68,406 @@ h4 {
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-neon);
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+  box-shadow: 0 0 0 5px rgb(0 217 255 / 0.4);
 }
 
-@utility card {
-  border: 1px solid var(--color-line);
+/* ---- Background mesh ---- */
+
+.mesh {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+
+/* Soft by construction, so no blur filter has to run while they drift. */
+.mesh-blob {
+  position: absolute;
+  width: 70vmax;
+  height: 70vmax;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--blob), transparent);
+  will-change: transform;
+  animation: drift 52s ease-in-out infinite alternate;
+}
+
+.mesh::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgb(37 99 255 / 0.14) 1px, transparent 1px);
+  background-size: 26px 26px;
+  mask-image: linear-gradient(to bottom, black, transparent 75%);
+}
+
+@keyframes drift {
+  to {
+    transform: translate3d(var(--drift-x, 8vmax), var(--drift-y, 6vmax), 0) scale(1.08);
+  }
+}
+
+/* ---- Surfaces ---- */
+
+@utility glass {
+  position: relative;
   border-radius: var(--radius-2xl);
-  background: white;
+  background: rgb(255 255 255 / 0.7);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-soft);
+
+  /* Gradient hairline border, masked so it never tints the glass. */
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: var(--gradient-signature);
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+    opacity: 0.4;
+    pointer-events: none;
+    transition: opacity 200ms var(--ease-soft);
+  }
+
+  /* Phones get opaque-looking cards instead of one blur layer per card. */
+  @media (max-width: 640px) {
+    background: rgb(255 255 255 / 0.82);
+    backdrop-filter: none;
+  }
 }
 
-@utility card-link {
-  transition:
-    box-shadow 150ms,
-    border-color 150ms,
-    transform 150ms;
+/* The glow lives on a pseudo-element so hovering only animates opacity. */
+@utility glass-link {
+  display: block;
+  transition: transform 200ms var(--ease-soft);
 
-  &:hover {
-    border-color: var(--color-primary);
-    box-shadow: var(--shadow-neon);
-    transform: translateY(-1px);
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: var(--shadow-glow);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms var(--ease-soft);
+  }
+
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-3px);
+    }
+    &:hover::before {
+      opacity: 1;
+    }
+    &:hover::after {
+      opacity: 1;
+    }
+  }
+
+  &:active {
+    transform: translateY(0) scale(0.995);
+  }
+}
+
+@utility script-page {
+  border-radius: var(--radius-xl);
+  background: white;
+  box-shadow: var(--shadow-page);
+}
+
+/* ---- Top bar ---- */
+
+@utility topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgb(255 255 255 / 0.72);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid transparent;
+  border-image: var(--gradient-signature) 1;
+}
+
+.nav-indicator {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 1px;
+  height: 2px;
+  background: var(--gradient-signature);
+  box-shadow: 0 0 10px rgb(0 217 255 / 0.9);
+  transform-origin: left;
+  opacity: 0;
+  transition:
+    transform 260ms var(--ease-soft),
+    opacity 200ms;
+}
+
+/* ---- Type ---- */
+
+@utility text-gradient {
+  padding-bottom: 0.08em;
+  background: var(--gradient-text);
+  background-clip: text;
+  color: transparent;
+
+  @media (forced-colors: active) {
+    background: none;
+    color: CanvasText;
+  }
+}
+
+@utility eyebrow {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Outfit glyphs overlap internally, so a plain stroke shows crossed lines.
+   Painting the fill over the stroke hides them, and the blend mode then makes
+   that fill vanish: white under multiply, or black under screen on dark art. */
+@utility numeral-outline {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--numeral-fill, white);
+  -webkit-text-stroke: 3px var(--numeral, var(--color-primary));
+  paint-order: stroke fill;
+  mix-blend-mode: var(--numeral-blend, multiply);
+
+  @media (forced-colors: active) {
+    color: CanvasText;
+    -webkit-text-stroke: 0;
+    mix-blend-mode: normal;
+  }
+}
+
+/* Two stacked copies crossfade, so the title animates with opacity alone. */
+.hero-title-shift {
+  position: absolute;
+  inset: 0;
+  background-image: var(--gradient-text-shift);
+  animation: crossfade 5s ease-in-out infinite alternate;
+}
+
+@keyframes crossfade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---- Small components ---- */
+
+@utility chip {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.75);
+  color: var(--color-muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+@utility btn-primary {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1.25rem;
+  border-radius: var(--radius-lg);
+  background: var(--gradient-button);
+  color: white;
+  font-weight: 600;
+  transition: transform 150ms var(--ease-soft);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: var(--shadow-glow);
+    opacity: 0;
+    transition: opacity 200ms var(--ease-soft);
+  }
+
+  &:hover:not(:disabled)::after {
+    opacity: 1;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+  }
+}
+
+@utility btn-ghost {
+  position: relative;
+  padding: 0.25rem 0.1rem;
+  color: var(--color-primary-strong);
+  font-weight: 500;
+  white-space: nowrap;
+
+  &::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: var(--gradient-signature);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 220ms var(--ease-soft);
+  }
+
+  &:hover::after,
+  &:focus-visible::after {
+    transform: scaleX(1);
+  }
+}
+
+@utility field {
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: rgb(255 255 255 / 0.9);
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--gradient-signature);
+  transform: scaleX(var(--progress));
+  transform-origin: left;
+  animation: progress-grow 600ms var(--ease-soft);
+}
+
+@keyframes progress-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/* ---- Timeline ---- */
+
+.timeline {
+  position: relative;
+  padding-left: 1.75rem;
+}
+
+.timeline::before {
+  content: "";
+  position: absolute;
+  top: 0.75rem;
+  bottom: 0.75rem;
+  left: 0.4rem;
+  width: 2px;
+  background: var(--gradient-signature);
+  box-shadow: 0 0 10px rgb(0 217 255 / 0.55);
+}
+
+.timeline-dot {
+  position: absolute;
+  top: 1.35rem;
+  left: -1.7rem;
+  width: 0.95rem;
+  height: 0.95rem;
+  border: 3px solid white;
+  border-radius: 50%;
+  background: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-line), 0 0 10px rgb(0 217 255 / 0.7);
+}
+
+/* ---- Motion ---- */
+
+@utility rise {
+  animation: rise 280ms var(--ease-soft) both;
+  animation-delay: calc(min(var(--i, 0), 6) * 40ms);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.page-enter {
+  animation: page-enter 220ms var(--ease-soft) both;
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.hero-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 480px;
+  height: 480px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(124 92 255 / 0.22), rgb(0 217 255 / 0.1) 55%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 250ms;
+  will-change: transform;
+}
+
+@utility skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgb(214 228 255 / 0.6);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.75), transparent);
+    transform: translateX(-100%);
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .hero-title-shift,
+  .hero-glow {
+    display: none;
   }
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Courier_Prime, Inter, Outfit } from "next/font/google";
+import { MeshBackground } from "@/components/layout/mesh-background";
 import { TopBar } from "@/components/top-bar";
 import "./globals.css";
 
@@ -24,8 +25,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${outfit.variable} ${inter.variable} ${courierPrime.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
+        <MeshBackground />
         <TopBar />
-        <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
           {children}
         </main>
       </body>
