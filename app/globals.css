@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #f5f9ff;
+  --color-primary: #2563ff;
+  --color-neon: #00d9ff;
+  --color-ink: #0b1b3a;
+  --color-line: #d6e4ff;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  --font-script: var(--font-courier-prime), "Courier New", monospace;
+
+  --shadow-neon: 0 0 0 1px rgb(0 217 255 / 0.35), 0 0 16px rgb(0 217 255 / 0.25);
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-neon);
+  outline-offset: 2px;
+}
