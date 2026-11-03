@@ -19,7 +19,9 @@
 }
 
 body {
-  background: var(--color-background);
+  background:
+    radial-gradient(60rem 24rem at 50% -8rem, rgb(0 217 255 / 0.12), transparent) no-repeat,
+    var(--color-background);
   color: var(--color-ink);
   font-family: var(--font-sans);
 }
@@ -34,4 +36,23 @@ h4 {
 :focus-visible {
   outline: 2px solid var(--color-neon);
   outline-offset: 2px;
+}
+
+@utility card {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-2xl);
+  background: white;
+}
+
+@utility card-link {
+  transition:
+    box-shadow 150ms,
+    border-color 150ms,
+    transform 150ms;
+
+  &:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-neon);
+    transform: translateY(-1px);
+  }
 }
