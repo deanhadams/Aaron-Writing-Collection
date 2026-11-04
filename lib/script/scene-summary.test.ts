@@ -4,6 +4,7 @@ import {
   formatTimecode,
   speakerLineCounts,
   summarizeBeats,
+  voiceName,
 } from "./scene-summary";
 
 const beat = (type: BeatType, text: string, character?: string): Beat => ({
@@ -11,6 +12,27 @@ const beat = (type: BeatType, text: string, character?: string): Beat => ({
   type,
   text,
   character,
+});
+
+describe("voiceName", () => {
+  it("shows a label with no character record on its own", () => {
+    expect(voiceName("INTERCOM", false)).toBe("INTERCOM");
+  });
+
+  it("marks a character's voice-over", () => {
+    expect(voiceName("2015", true)).toBe("2015 (V.O.)");
+  });
+
+  it("falls back when nobody is named", () => {
+    expect(voiceName(undefined, false)).toBe("V.O.");
+  });
+});
+
+describe("speakerLineCounts with a voice label", () => {
+  it("counts the line under the label", () => {
+    const counts = speakerLineCounts([{ id: "1", type: "vo", character: "INTERCOM", text: "Hello" }]);
+    expect(counts.get("INTERCOM")).toBe(1);
+  });
 });
 
 describe("speakerLineCounts", () => {

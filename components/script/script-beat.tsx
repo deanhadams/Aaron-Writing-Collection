@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import type { Beat } from "@/lib/db/schema";
+import { voiceName } from "@/lib/script/scene-summary";
 
 function Dialogue({
   name,
@@ -62,7 +63,7 @@ export function ScriptBeat({
     case "vo":
       return (
         <Dialogue
-          name={character ? `${character} (V.O.)` : "V.O."}
+          name={voiceName(character, Boolean(character && characterColors.has(character)))}
           beat={beat}
           color={color}
         />

@@ -1,4 +1,4 @@
-type SceneKind = "prologue" | "scene" | "outro" | "post_credit";
+export type SceneKind = "prologue" | "scene" | "outro" | "post_credit";
 
 export const SCENE_KIND_LABELS: Record<SceneKind, string> = {
   prologue: "Prologue",

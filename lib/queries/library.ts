@@ -69,7 +69,7 @@ export async function getSeasonCards() {
       .from(scenes)
       .innerJoin(episodes, eq(scenes.episodeId, episodes.id))
       .leftJoin(users, eq(scenes.updatedBy, users.id))
-      .orderBy(asc(scenes.position)),
+      .orderBy(asc(episodes.number), asc(scenes.position)),
     db
       .select({
         seasonId: episodes.seasonId,

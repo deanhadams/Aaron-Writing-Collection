@@ -20,6 +20,7 @@ Series > seasons > episodes > scenes.
 
 - Scenes hold an ordered JSON array of typed **beats**: `dialogue`, `visual`, `sound`, `vo`, `action`, `note`.
 - Characters have cards with images and an auto-derived list of the scenes they appear in.
+- `beat.character` is text, not a foreign key, and may match no `characters` row: voice labels like `INTERCOM` (`vo` beats with no card) and shared lines like `REVOC & DESRUC` (`splitSpeakers` credits each person). The editor must accept these, and `scene_characters` skips names with no row.
 
 ## Data model
 

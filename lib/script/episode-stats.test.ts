@@ -144,3 +144,12 @@ describe("summarizeSeason", () => {
     });
   });
 });
+
+describe("summarizeSeason after an import", () => {
+  it("continues from the first scene when every scene has the same time", () => {
+    const updatedAt = new Date("2026-01-01");
+    const row = (id: string) => ({ ...scene({ updatedAt }), id, episodeId: "e1" });
+    const stats = summarizeSeason([{ id: "e1", status: "drafting" }], [row("first"), row("second")]);
+    expect(stats.continueSceneId).toBe("first");
+  });
+});
