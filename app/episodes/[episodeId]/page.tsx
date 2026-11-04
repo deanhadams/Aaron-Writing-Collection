@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { EpisodeControls } from "@/components/structure/episode-controls";
@@ -27,6 +28,12 @@ async function Episode({ params }: { params: Params }) {
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <p className="eyebrow text-primary-strong">Episode {episode.number}</p>
         <EpisodeControls episode={episode} />
+        <Link href={`/read/${episode.seasonId}/${episode.id}`} className="btn-ghost text-sm">
+          Read
+        </Link>
+        <a href={`/api/export/episodes/${episode.id}`} className="btn-ghost text-sm">
+          Download Word
+        </a>
       </div>
       <h1 className="text-gradient mt-1 w-fit text-4xl font-bold tracking-tight sm:text-5xl">
         {episode.title}

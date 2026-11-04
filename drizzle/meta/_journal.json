@@ -36,6 +36,13 @@
       "when": 1793808582848,
       "tag": "0004_brainy_sunspot",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793818018460,
+      "tag": "0005_fuzzy_otto_octavius",
+      "breakpoints": true
     }
   ]
 }

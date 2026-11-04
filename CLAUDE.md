@@ -53,6 +53,8 @@ character_images(id, character_id, r2_key, caption, position)
 scene_characters(scene_id, character_id, line_count)
          -- derived on save. Deleted scenes have no rows until restored
 lore_entries(id, series_id, title, category, body)
+reading_progress(user_id, season_id, scene_id, updated_at)  -- one row per person per season
+backups_log(id, user_id, created_at)
 ```
 
 ## Design
@@ -140,6 +142,14 @@ Pages use a board (`lib/structure/board.ts`, `useBoard`): a plain object outside
 - Rebuilds of `scene_characters` go through `rebuildSceneLinks` with live scenes only.
 - `lib/images.ts` reads a server setting, so it returns nothing in the browser. Pass finished urls to client components.
 - The importer matches on `import_key`, never on position, and never writes a position, number or episode to a row that exists.
+
+### Reader and export
+
+- `lib/script/format.ts` holds the wording the reader and Word share, so change it there.
+- `lib/export/lines.ts` checks each line against the importer's parser, and uses a label when a plain line would be misread. `npm run export:check` reads every season back and lists any difference. Run it after changing the exporter or the parser.
+- Hidden routes stay in the DOM, so a duplicate id or `[data-scene]` can belong to the page you left. The reader looks only inside its own root, and uses an effect rather than `:has()` to hide the top bar.
+- A printed episode gets its title through a named `@page` rule, because repeating table headers does not work here.
+- The backup leaves out `users`, so it can never hold password hashes. New tables go in `TABLES` in `lib/export/backup.ts`.
 
 ### Motion and performance rules
 

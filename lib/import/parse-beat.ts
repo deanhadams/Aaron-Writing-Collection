@@ -16,7 +16,7 @@ export const NON_SPEAKERS = new Set([
 /** Voices that speak as vo beats under a label, with no character card. */
 export const VOICE_LABELS = new Set(["INTERCOM"]);
 
-const LABELLED = /^(?:\((VISUAL|SOUND|ACTION)\)|(VISUAL|SOUND|ACTION))\s*:\s*(.*)$/u;
+const LABELLED = /^(?:\((VISUAL|SOUND|ACTION|NOTE|DIALOGUE|VO)\)|(VISUAL|SOUND|ACTION))\s*:\s*(.*)$/u;
 const LABEL_IN_BRACKETS = /^\((VISUAL|SOUND|ACTION):\s*(.*)$/u;
 const SPEAKER = /^([\p{Lu}\p{N}][\p{Lu}\p{N} .,'’&/-]*?)\s*(?:\(([^()]*)\))?\s*:\s*(.*)$/u;
 const VOICE_OVER = /^V\.?\s?O\.?$/;
@@ -98,7 +98,15 @@ function parseSpoken(line: string): Spoken | null {
   };
 }
 
-const LABEL_TYPES = { VISUAL: "visual", SOUND: "sound", ACTION: "action" } as const;
+// The last three are the Word export's, for a beat a plain line would misread.
+const LABEL_TYPES = {
+  VISUAL: "visual",
+  SOUND: "sound",
+  ACTION: "action",
+  NOTE: "note",
+  DIALOGUE: "dialogue",
+  VO: "vo",
+} as const;
 type Label = keyof typeof LABEL_TYPES;
 
 export function parseBeat(line: SourceLine, createId: () => string): Beat {

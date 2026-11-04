@@ -20,7 +20,26 @@ A private web app where Aaron writes anime screenplays and keeps a character bib
 | `npm run db:migrate` | Applies database migrations |
 | `npm run db:seed` | Creates the three user accounts from `SEED_USERS` |
 | `npm run import:season -- --dry-run` | Reports on `import/Season_1.docx` without touching the database |
+| `npm run export:check` | Exports every season to Word and reads it back with the importer, listing any difference. Read-only |
 | `npm run portraits:link` | Checks R2 for each character's portrait, and links any that are missing a key |
+
+## Reading and exporting
+
+The reader is at `/read/<season>` for a whole season and `/read/<season>/<episode>` for one episode. Keys: J or → next scene, K or ← previous scene, ] next episode, [ previous episode. Text size and the other settings are kept in the browser. The last scene read is kept per person in the database, so it follows them between devices.
+
+To make a PDF, open the reader and choose Print or save as PDF from the … menu. Print the season reader for a whole season. Edge and Chrome show the episode title and page number in the page margins; other browsers may leave them out.
+
+Word files come from the Download Word buttons, or `/api/export/seasons/<id>` and `/api/export/episodes/<id>`. Every line is checked against the importer's parser as it is written, so an export can be imported again. A beat that a plain line would misread gets a label like `(NOTE):` or `(ACTION):`.
+
+Download everything, in the account menu, streams a zip:
+
+| Path | Contents |
+|---|---|
+| `content/*.json` | Every table of writing, including soft-deleted rows and scene revisions. No user accounts |
+| `word/*.docx` | One file per season |
+| `manifest.json` | The time, row counts, and every image's R2 key and public URL. The images themselves are not included |
+
+Each download is recorded in `backups_log`.
 
 ## Browser tests
 

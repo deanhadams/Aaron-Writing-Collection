@@ -34,12 +34,14 @@ const MenuContext = createContext<(action: () => void) => void>((action) => acti
 export function ActionMenu({
   label,
   text,
+  trigger: triggerContent,
   triggerClass = "tool-button",
   keepFocusOn,
   children,
 }: {
   label: string;
   text?: string;
+  trigger?: ReactNode;
   triggerClass?: string;
   keepFocusOn?: number;
   children: ReactNode;
@@ -153,7 +155,7 @@ export function ActionMenu({
         className={text ? "btn-ghost text-sm" : triggerClass}
         onClick={toggle}
       >
-        {text ?? <MoreIcon />}
+        {text ?? triggerContent ?? <MoreIcon />}
       </button>
 
       {isOpen &&

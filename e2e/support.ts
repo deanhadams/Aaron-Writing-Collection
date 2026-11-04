@@ -79,6 +79,12 @@ function sessionToken(userId: string, name: string) {
   return `${body}.${signature}`;
 }
 
+/** The backup test's own log row, so test runs don't read as real backups. */
+export async function clearBackupLog(since: Date) {
+  const { db, backupsLog } = await database();
+  await db.delete(backupsLog).where(gte(backupsLog.createdAt, since));
+}
+
 export async function signInCookie(url: string) {
   const { db, users } = await database();
   const [user] = await db.select().from(users).limit(1);

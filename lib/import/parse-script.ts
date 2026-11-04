@@ -146,7 +146,14 @@ export function parseScript(
   };
 
   for (const line of lines) {
-    const heading = parseHeading(line.text);
+    const parsed = parseHeading(line.text);
+
+    // A scene header field only counts at the top of a scene.
+    if (parsed?.type === "field" && state.scene?.beats.length === 0) {
+      state.scene[parsed.field] = parsed.value;
+      continue;
+    }
+    const heading = parsed?.type === "field" ? null : parsed;
 
     if (heading?.type === "season" || heading?.type === "episode") {
       applyHeading(heading);

@@ -7,6 +7,7 @@ export type Heading =
   | { type: "episode"; number: number; title: string }
   | { type: "scene"; kind: SceneKind; title: string | null; timecode: string | null; location: string | null }
   | { type: "theme"; which: "opening" | "outro"; value: string | null; timecode: string | null }
+  | { type: "field"; field: "timecode" | "location"; value: string }
   | { type: "end" };
 
 const EDGE_DECOR = /^[\p{Extended_Pictographic}\p{Regional_Indicator}\u{1F3FB}-\u{1F3FF}️‍\s]+|[\p{Extended_Pictographic}\p{Regional_Indicator}\u{1F3FB}-\u{1F3FF}️‍\s]+$/gu;
@@ -22,6 +23,8 @@ const SCENE = new RegExp(`^Scene\\s+\\d+(?:\\s*(?::|${DASH})\\s*(.*))?$`, "iu");
 const END_EPISODE = /^END(?: OF)? EPISODE\.?(?: SEASON FINALE\.?)?$/i;
 const BARE_END = /^END\.?$/i;
 const IN_BRACKETS = /^\((.*)\)$/;
+// For the Word export: a scene header that "(2:00 - 6:00) ROOM" can't hold.
+const SCENE_FIELD = /^(Timecode|Location):\s*(.+)$/;
 
 type Special =
   | { names: RegExp; kind: SceneKind; title?: (rest: string | null) => string | null }
@@ -29,6 +32,8 @@ type Special =
 
 const SPECIALS: Special[] = [
   { names: /^(?:prologue|opening scene)/i, kind: "prologue" },
+  // Also for the Word export: an outro with writing of its own.
+  { names: /^outro scene/i, kind: "outro" },
   { names: /^(?:end scene|post[- ]credits?(?: scene)?)/i, kind: "post_credit" },
   // A one-off in Episode 16: a closing scene that sits inside the episode.
   { names: /^ending(?=\s*:)/i, kind: "scene", title: (rest) => `Ending: ${rest}` },
@@ -83,6 +88,11 @@ function parseSpecial(text: string, leading: string | null): Heading | null {
 /** Headings match the whole line, so a sentence that merely mentions one stays a beat. */
 export function parseHeading(raw: string): Heading | null {
   const text = stripDecor(raw);
+
+  const field = text.match(SCENE_FIELD);
+  if (field) {
+    return { type: "field", field: field[1] === "Timecode" ? "timecode" : "location", value: field[2].trim() };
+  }
 
   const season = text.match(SEASON);
   if (season) return { type: "season", number: Number(season[1]) };
