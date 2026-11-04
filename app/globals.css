@@ -160,7 +160,7 @@ h4 {
 
   @media (hover: hover) {
     &:hover {
-      transform: translateY(-3px);
+      transform: translateY(var(--lift, -3px));
     }
     &:hover::before {
       opacity: 1;
@@ -171,7 +171,7 @@ h4 {
   }
 
   &:active {
-    transform: translateY(0) scale(0.995);
+    transform: translateY(0) scale(var(--press, 0.995));
   }
 }
 
@@ -372,30 +372,194 @@ h4 {
 
 .timeline {
   position: relative;
-  padding-left: 1.75rem;
+  padding-left: 2.75rem;
 }
 
 .timeline::before {
   content: "";
   position: absolute;
-  top: 0.75rem;
-  bottom: 0.75rem;
-  left: 0.4rem;
+  top: 1.5rem;
+  bottom: 1.5rem;
+  left: calc(1rem - 1px);
   width: 2px;
   background: var(--gradient-signature);
   box-shadow: 0 0 10px rgb(0 217 255 / 0.55);
 }
 
-.timeline-dot {
+/* Decoration uses the exact --kind color; text uses --kind-text for AA. */
+[data-kind="prologue"] {
+  --kind: #7c5cff;
+  --kind-text: #5b3bd6;
+}
+
+[data-kind="scene"] {
+  --kind: #2563ff;
+  --kind-text: #1a45c4;
+}
+
+[data-kind="outro"] {
+  --kind: #00d9ff;
+  --kind-text: #0b6a85;
+}
+
+[data-kind="post_credit"] {
+  --kind: #ff4fa3;
+  --kind-text: #b01c72;
+}
+
+.timeline-node {
   position: absolute;
-  top: 1.35rem;
-  left: -1.7rem;
-  width: 0.95rem;
-  height: 0.95rem;
-  border: 3px solid white;
+  top: 1.25rem;
+  left: -2.75rem;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
   border-radius: 50%;
-  background: var(--color-primary);
-  box-shadow: 0 0 0 1px var(--color-line), 0 0 10px rgb(0 217 255 / 0.7);
+  background: white;
+  color: var(--kind-text);
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 700;
+  box-shadow:
+    0 0 0 2px var(--kind),
+    0 0 14px color-mix(in srgb, var(--kind) 60%, transparent);
+}
+
+/* ---- Scene card ---- */
+
+.scene-card {
+  --lift: -2px;
+  --press: 0.985;
+  box-shadow: 0 10px 26px -16px color-mix(in srgb, var(--kind) 55%, transparent);
+}
+
+.scene-card::after {
+  box-shadow:
+    0 0 0 1px var(--kind),
+    0 12px 30px -10px color-mix(in srgb, var(--kind) 55%, transparent),
+    0 0 18px color-mix(in srgb, var(--kind) 30%, transparent);
+}
+
+.scene-card:focus-visible {
+  outline-color: var(--kind-text);
+}
+
+.scene-card-art {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+/* The left accent bar. */
+.scene-card-art::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+  background: linear-gradient(to bottom, var(--kind), color-mix(in srgb, var(--kind) 35%, white));
+}
+
+.scene-card-watermark {
+  --numeral: var(--kind-text);
+  position: absolute;
+  right: 3.5rem;
+  bottom: -1.75rem;
+  color: var(--kind-text);
+  font-size: 9.5rem;
+  opacity: 0.1;
+}
+
+.scene-card-watermark svg {
+  stroke-width: 0.6;
+}
+
+.scene-card-watermark:not(:has(svg)) {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  line-height: 1;
+  color: white;
+  -webkit-text-stroke: 3px var(--numeral);
+  paint-order: stroke fill;
+  mix-blend-mode: multiply;
+}
+
+.scene-card-kind {
+  color: var(--kind-text);
+}
+
+.scene-card-preview {
+  margin-top: 0.25rem;
+  overflow: hidden;
+  color: var(--color-muted);
+  font-family: var(--font-script);
+  font-style: italic;
+  white-space: nowrap;
+  mask-image: linear-gradient(to right, black 82%, transparent);
+}
+
+.scene-card-arrow {
+  position: absolute;
+  top: 50%;
+  right: 1.1rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: -0.625rem;
+  color: var(--kind-text);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition:
+    opacity 200ms var(--ease-soft),
+    transform 200ms var(--ease-soft);
+}
+
+.avatar-stack {
+  display: flex;
+}
+
+.avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  margin-left: -0.5rem;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px white;
+  color: white;
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: transform 200ms var(--ease-soft);
+}
+
+.avatar:first-child {
+  margin-left: 0;
+}
+
+.avatar-more {
+  background: white;
+  color: var(--kind-text);
+}
+
+@media (hover: hover) {
+  .scene-card:hover .scene-card-arrow {
+    opacity: 1;
+    transform: none;
+  }
+
+  .scene-card:hover .avatar {
+    transform: translateX(calc(var(--n) * -4px));
+  }
+}
+
+.scene-card:focus-visible .scene-card-arrow {
+  opacity: 1;
+  transform: none;
 }
 
 /* ---- Motion ---- */

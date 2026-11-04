@@ -5,9 +5,11 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { db } from "../lib/db";
+import { speakerLineCounts } from "../lib/script/scene-summary";
 import {
   characters,
   episodes,
+  sceneCharacters,
   scenes,
   seasons,
   series,
@@ -30,6 +32,9 @@ const CAST = [
   { name: "MIRA", fullName: "Mira Solenne", color: "#B4237A" },
   { name: "JUN", fullName: "Jun Tarrow", color: "#0F766E" },
   { name: "THE KEEPER", fullName: "The Keeper", color: "#B45309" },
+  { name: "ROOK", fullName: "Rook Abara", color: "#4338CA" },
+  { name: "ADA", fullName: "Ada Lindqvist", color: "#0369A1" },
+  { name: "OLD TOM", fullName: "Tom Pell", color: "#7E22CE" },
 ];
 
 const EPISODES = [
@@ -64,12 +69,25 @@ const EPISODES = [
           beat("visual", "The lamp above them glows a soft, impossible cyan."),
           beat("sound", "A low hum, almost a voice."),
           say("THE KEEPER", "You are late, little courier.", "from the lamp"),
+          say("ROOK", "Did that lamp just talk?"),
+          say("ADA", "Lamps do not talk, Rook."),
+          say("OLD TOM", "This one always has."),
           beat("note", "Check the hum against the opening theme."),
         ],
       },
       {
+        kind: "outro" as const,
+        title: "Last Light",
+        timecode: "20:30 - 21:00",
+        location: "HARBOUR WALL - DAWN",
+        beats: [
+          say("MIRA", "Same time tomorrow?"),
+          say("JUN", "If the street lets us."),
+        ],
+      },
+      {
         kind: "post_credit" as const,
-        title: null,
+        title: "The Parcel Ticks",
         location: "LANTERN STREET - NIGHT",
         beats: [beat("visual", "The parcel, alone on the kerb, begins to tick.")],
       },
@@ -108,9 +126,11 @@ async function addSample() {
       .values({ title: SAMPLE_SERIES_TITLE })
       .returning({ id: series.id });
 
-    await tx
+    const cast = await tx
       .insert(characters)
-      .values(CAST.map((member) => ({ ...member, seriesId })));
+      .values(CAST.map((member) => ({ ...member, seriesId })))
+      .returning({ id: characters.id, name: characters.name });
+    const castIds = new Map(cast.map(({ id, name }) => [name, id]));
 
     const [{ id: seasonId }] = await tx
       .insert(seasons)
@@ -123,14 +143,21 @@ async function addSample() {
         .values({ ...episode, seasonId })
         .returning({ id: episodes.id });
 
-      if (sceneList.length > 0) {
-        await tx.insert(scenes).values(
-          sceneList.map((scene, index) => ({
-            ...scene,
-            episodeId,
-            position: index + 1,
-          })),
+      for (const [index, scene] of sceneList.entries()) {
+        const [{ id: sceneId }] = await tx
+          .insert(scenes)
+          .values({ ...scene, episodeId, position: index + 1 })
+          .returning({ id: scenes.id });
+
+        const speakers = [...speakerLineCounts(scene.beats)].flatMap(
+          ([name, lineCount]) => {
+            const characterId = castIds.get(name);
+            return characterId ? [{ sceneId, characterId, lineCount }] : [];
+          },
         );
+        if (speakers.length > 0) {
+          await tx.insert(sceneCharacters).values(speakers);
+        }
       }
     }
   });

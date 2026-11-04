@@ -1,10 +1,11 @@
 import "server-only";
-import { asc, eq, sql } from "drizzle-orm";
+import { asc, desc, eq, sql } from "drizzle-orm";
 import { connection } from "next/server";
 import { db } from "@/lib/db";
 import {
   characters,
   episodes,
+  sceneCharacters,
   scenes,
   seasons,
   series,
@@ -103,20 +104,40 @@ export async function getEpisode(episodeId: string) {
 
   if (!episode) return null;
 
-  const sceneRows = await db
-    .select({
-      id: scenes.id,
-      kind: scenes.kind,
-      title: scenes.title,
-      timecode: scenes.timecode,
-      location: scenes.location,
-      beatCount: sql<number>`jsonb_array_length(${scenes.beats})::int`,
-    })
-    .from(scenes)
-    .where(eq(scenes.episodeId, episodeId))
-    .orderBy(asc(scenes.position));
+  const [sceneRows, speakerRows] = await Promise.all([
+    db
+      .select({
+        id: scenes.id,
+        kind: scenes.kind,
+        title: scenes.title,
+        timecode: scenes.timecode,
+        location: scenes.location,
+        beats: scenes.beats,
+      })
+      .from(scenes)
+      .where(eq(scenes.episodeId, episodeId))
+      .orderBy(asc(scenes.position)),
+    db
+      .select({
+        sceneId: sceneCharacters.sceneId,
+        name: characters.name,
+        color: characters.color,
+        portraitKey: characters.portraitKey,
+      })
+      .from(sceneCharacters)
+      .innerJoin(characters, eq(sceneCharacters.characterId, characters.id))
+      .innerJoin(scenes, eq(sceneCharacters.sceneId, scenes.id))
+      .where(eq(scenes.episodeId, episodeId))
+      .orderBy(desc(sceneCharacters.lineCount), asc(characters.name)),
+  ]);
 
-  return { ...episode, scenes: sceneRows };
+  return {
+    ...episode,
+    scenes: sceneRows.map((scene) => ({
+      ...scene,
+      speakers: speakerRows.filter((speaker) => speaker.sceneId === scene.id),
+    })),
+  };
 }
 
 export async function getScene(sceneId: string) {

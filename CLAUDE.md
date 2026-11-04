@@ -64,6 +64,17 @@ Tokens live in [app/globals.css](app/globals.css). Use the Tailwind names below 
 | `status-drafting` | `#0B6A85` | Drafting pill text, on 15% cyan mixed with white |
 | `status-done` | `#0B6B3C` | Done pill text, on 15% of itself mixed with white |
 
+### Scene kind colors
+
+Set by `data-kind` on an element, as `--kind` (exact color, decoration only) and `--kind-text` (AA on white, for labels and numbers).
+
+| Kind | `--kind` | `--kind-text` |
+|---|---|---|
+| `prologue` | `#7C5CFF` | `#5B3BD6` |
+| `scene` | `#2563FF` | `#1A45C4` |
+| `outro` | `#00D9FF` | `#0B6A85` |
+| `post_credit` | `#FF4FA3` | `#B01C72` |
+
 ### Gradients (CSS variables)
 
 | Variable | Stops | Use |

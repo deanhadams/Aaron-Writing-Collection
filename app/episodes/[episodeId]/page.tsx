@@ -40,9 +40,7 @@ async function Episode({ params }: { params: Params }) {
         {episode.scenes.length === 0 ? (
           <EmptyState title="No scenes yet" />
         ) : (
-          <div className="max-w-3xl">
-            <SceneTimeline scenes={episode.scenes} />
-          </div>
+          <SceneTimeline scenes={episode.scenes} />
         )}
       </div>
     </>
