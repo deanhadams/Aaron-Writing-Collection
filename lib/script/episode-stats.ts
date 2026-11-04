@@ -29,6 +29,17 @@ function lastEdit(scenes: EpisodeSceneRow[]) {
   return { at: latest.updatedAt, by: latest.editor };
 }
 
+export type SeasonPhase = "planning" | "in_progress" | "complete";
+
+type Status = "idea" | "drafting" | "done";
+
+export function seasonPhase(statuses: Status[]): SeasonPhase {
+  if (statuses.length > 0 && statuses.every((status) => status === "done")) {
+    return "complete";
+  }
+  return statuses.some((status) => status !== "idea") ? "in_progress" : "planning";
+}
+
 /** Expects scenes in script order. */
 export function summarizeEpisode(scenes: EpisodeSceneRow[]) {
   return {
@@ -37,5 +48,33 @@ export function summarizeEpisode(scenes: EpisodeSceneRow[]) {
     runtimeMinutes: runtimeMinutes(scenes),
     firstVisual: scenes[0]?.firstVisual?.trim() || null,
     lastEdited: lastEdit(scenes),
+  };
+}
+
+export type SeasonSceneRow = EpisodeSceneRow & { id: string; episodeId: string };
+
+export function summarizeSeason(
+  episodes: { id: string; status: Status }[],
+  scenes: SeasonSceneRow[],
+) {
+  const perEpisode = episodes.map(({ id }) =>
+    summarizeEpisode(scenes.filter((scene) => scene.episodeId === id)),
+  );
+  const runtimes = perEpisode.flatMap(({ runtimeMinutes }) => runtimeMinutes ?? []);
+  const latest = scenes.length
+    ? scenes.reduce((a, b) => (b.updatedAt > a.updatedAt ? b : a))
+    : null;
+
+  return {
+    phase: seasonPhase(episodes.map(({ status }) => status)),
+    episodeCount: episodes.length,
+    doneCount: episodes.filter(({ status }) => status === "done").length,
+    sceneCount: scenes.length,
+    lineCount: scenes.reduce((total, scene) => total + scene.lineCount, 0),
+    runtimeMinutes: runtimes.length
+      ? runtimes.reduce((total, minutes) => total + minutes, 0)
+      : null,
+    lastEdited: latest ? { at: latest.updatedAt, by: latest.editor } : null,
+    continueSceneId: latest?.id ?? null,
   };
 }

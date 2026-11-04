@@ -1,8 +1,6 @@
 import type { CSSProperties } from "react";
 import { imageUrl } from "@/lib/images";
 
-const MAX_VISIBLE = 4;
-
 type Speaker = {
   name: string;
   color: string | null;
@@ -27,8 +25,14 @@ function Avatar({ speaker }: { speaker: Speaker }) {
   );
 }
 
-export function SpeakerAvatars({ speakers }: { speakers: Speaker[] }) {
-  const visible = speakers.slice(0, MAX_VISIBLE);
+export function SpeakerAvatars({
+  speakers,
+  max = 4,
+}: {
+  speakers: Speaker[];
+  max?: number;
+}) {
+  const visible = speakers.slice(0, max);
   const hidden = speakers.length - visible.length;
   const total = visible.length + (hidden > 0 ? 1 : 0);
 

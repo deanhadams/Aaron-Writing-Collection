@@ -7,6 +7,7 @@ import { getSeasonCards } from "@/lib/queries/library";
 
 async function SeasonGrid() {
   const seasons = await getSeasonCards();
+  const now = new Date();
 
   if (seasons.length === 0) {
     return (
@@ -17,9 +18,9 @@ async function SeasonGrid() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       {seasons.map((season, index) => (
-        <SeasonCard key={season.id} season={season} index={index} />
+        <SeasonCard key={season.id} season={season} index={index} now={now} />
       ))}
     </div>
   );

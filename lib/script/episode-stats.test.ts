@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { summarizeEpisode, type EpisodeSceneRow } from "./episode-stats";
+import {
+  seasonPhase,
+  summarizeEpisode,
+  summarizeSeason,
+  type EpisodeSceneRow,
+} from "./episode-stats";
 
 const scene = (overrides: Partial<EpisodeSceneRow> = {}): EpisodeSceneRow => ({
   lineCount: 0,
@@ -61,6 +66,81 @@ describe("summarizeEpisode", () => {
       runtimeMinutes: null,
       firstVisual: null,
       lastEdited: null,
+    });
+  });
+});
+
+describe("seasonPhase", () => {
+  it("is planning when nothing has started", () => {
+    expect(seasonPhase([])).toBe("planning");
+    expect(seasonPhase(["idea", "idea"])).toBe("planning");
+  });
+
+  it("is in progress once anything has moved", () => {
+    expect(seasonPhase(["idea", "drafting"])).toBe("in_progress");
+    expect(seasonPhase(["done", "idea"])).toBe("in_progress");
+  });
+
+  it("is complete only when every episode is done", () => {
+    expect(seasonPhase(["done", "done"])).toBe("complete");
+    expect(seasonPhase(["done", "drafting"])).toBe("in_progress");
+  });
+});
+
+describe("summarizeSeason", () => {
+  const episodes = [
+    { id: "e1", status: "done" as const },
+    { id: "e2", status: "drafting" as const },
+    { id: "e3", status: "idea" as const },
+  ];
+  const row = (id: string, episodeId: string, overrides: Partial<EpisodeSceneRow> = {}) => ({
+    ...scene(overrides),
+    id,
+    episodeId,
+  });
+
+  it("adds runtimes per episode rather than taking the latest timecode", () => {
+    const stats = summarizeSeason(episodes, [
+      row("a", "e1", { timecode: "0:00 - 21:00" }),
+      row("b", "e2", { timecode: "0:00 - 20:00" }),
+    ]);
+    expect(stats.runtimeMinutes).toBe(41);
+  });
+
+  it("totals scenes, lines and done episodes", () => {
+    const stats = summarizeSeason(episodes, [
+      row("a", "e1", { lineCount: 4 }),
+      row("b", "e2", { lineCount: 5 }),
+    ]);
+    expect(stats).toMatchObject({
+      phase: "in_progress",
+      episodeCount: 3,
+      doneCount: 1,
+      sceneCount: 2,
+      lineCount: 9,
+    });
+  });
+
+  it("continues from the most recently edited scene", () => {
+    const stats = summarizeSeason(episodes, [
+      row("old", "e1", { updatedAt: new Date("2026-01-01"), editor: "Dean" }),
+      row("new", "e3", { updatedAt: new Date("2026-05-01"), editor: "Kim" }),
+      row("mid", "e2", { updatedAt: new Date("2026-03-01"), editor: "Aaron" }),
+    ]);
+    expect(stats.continueSceneId).toBe("new");
+    expect(stats.lastEdited).toEqual({ at: new Date("2026-05-01"), by: "Kim" });
+  });
+
+  it("copes with a season that has nothing in it", () => {
+    expect(summarizeSeason([], [])).toEqual({
+      phase: "planning",
+      episodeCount: 0,
+      doneCount: 0,
+      sceneCount: 0,
+      lineCount: 0,
+      runtimeMinutes: null,
+      lastEdited: null,
+      continueSceneId: null,
     });
   });
 });

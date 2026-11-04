@@ -1,8 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { formatRelative } from "./format";
+import { formatRelative, formatRuntime } from "./format";
 
 const now = new Date("2026-06-15T12:00:00Z");
 const ago = (seconds: number) => new Date(now.getTime() - seconds * 1000);
+
+describe("formatRuntime", () => {
+  it.each([
+    [45, "~45m"],
+    [60, "~1h"],
+    [500, "~8h 20m"],
+  ])("formats %i minutes", (minutes, expected) => {
+    expect(formatRuntime(minutes)).toBe(expected);
+  });
+});
 
 describe("formatRelative", () => {
   it.each([

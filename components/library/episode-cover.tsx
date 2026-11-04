@@ -29,7 +29,13 @@ export function coverStyle(episodeNumber: number) {
   } as CSSProperties;
 }
 
-function StatusChip({ status }: { status: Status }) {
+export function StatusChip({
+  status,
+  label = status,
+}: {
+  status: Status;
+  label?: string;
+}) {
   return (
     <span className="ep-status" data-status={status}>
       {status === "done" ? (
@@ -37,7 +43,7 @@ function StatusChip({ status }: { status: Status }) {
       ) : (
         <span aria-hidden className="ep-status-dot" />
       )}
-      {status}
+      {label}
     </span>
   );
 }

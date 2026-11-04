@@ -33,13 +33,7 @@
 
   /* Exact brand colors: decoration only (borders, bars, glows, art). */
   --gradient-signature: linear-gradient(120deg, #2563ff, #7c5cff 55%, #00d9ff);
-  --gradient-cover: linear-gradient(
-    var(--cover-angle, 135deg),
-    #2563ff,
-    #7c5cff 45%,
-    #ff4fa3 75%,
-    #00d9ff
-  );
+  --gradient-cover-stops: #2563ff, #7c5cff 45%, #ff4fa3 75%, #00d9ff;
 
   /* Same hues, deepened until they pass WCAG AA with text. */
   --gradient-text: linear-gradient(110deg, #1d4ed8, #6236e8 55%, #0e7490);
@@ -335,14 +329,6 @@ h4 {
   border: 1px solid var(--color-line);
   border-radius: var(--radius-lg);
   background: rgb(255 255 255 / 0.9);
-}
-
-.progress-fill {
-  height: 100%;
-  background: var(--gradient-signature);
-  transform: scaleX(var(--progress));
-  transform-origin: left;
-  animation: progress-grow 600ms var(--ease-soft);
 }
 
 @keyframes progress-grow {
@@ -671,6 +657,196 @@ h4 {
   margin-left: 0;
 }
 
+/* ---- Season card ---- */
+
+.season-card {
+  --press: 0.99;
+  display: flex !important;
+  height: 100%;
+  flex-direction: column;
+  box-shadow: 0 10px 26px -16px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.season-card::after {
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 14px 32px -10px color-mix(in srgb, var(--accent) 55%, transparent),
+    0 0 18px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* The title link stretches over the card; anything clickable sits above it. */
+.season-card-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+.season-card-link:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.season-card:has(.season-card-link:focus-visible) {
+  outline: 2px solid var(--kind-text);
+  outline-offset: 2px;
+}
+
+.season-card:has(.season-card-link:focus-visible) .ep-title-underline {
+  opacity: 1;
+}
+
+.season-title {
+  position: relative;
+  display: inline-block;
+}
+
+.season-card-actions {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+
+.season-cover {
+  position: relative;
+  display: flex;
+  height: 140px;
+  flex-shrink: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  overflow: hidden;
+  padding: 0.75rem 1.25rem 0 0.75rem;
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+}
+
+.season-cover .ep-numeral {
+  font-size: 5rem;
+}
+
+/* Sits on the bright stops of the gradient, so white text needs a backing. */
+.season-cover-label {
+  display: inline-block;
+  padding: 0.05rem 0.4rem;
+  border-radius: var(--radius-sm);
+  background: rgb(11 27 58 / 0.5);
+  color: white;
+}
+
+/* Oversized so the shapes can drift without ever showing an edge. */
+.season-cover-art {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(var(--cover-angle), var(--gradient-cover-stops));
+}
+
+.season-cover-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgb(255 255 255 / 0.2) 1px, transparent 1px);
+  background-size: 16px 16px;
+  mask-image: linear-gradient(to left, black, transparent 70%);
+}
+
+.season-cover-shapes {
+  position: absolute;
+  inset: -24px;
+  background:
+    radial-gradient(9rem 7rem at 64% 22%, rgb(255 255 255 / 0.3), transparent),
+    radial-gradient(11rem 8rem at 30% 105%, rgb(0 217 255 / 0.35), transparent);
+  transition: transform 600ms var(--ease-soft);
+}
+
+.season-cover-bunny {
+  position: absolute;
+  bottom: -1.75rem;
+  left: 0.25rem;
+  width: 10.5rem;
+  height: 10.5rem;
+  opacity: 0.2;
+  mix-blend-mode: overlay;
+  transition: transform 600ms var(--ease-soft);
+}
+
+.season-segments {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  gap: 3px;
+}
+
+/* A 4px bar is too thin to hover, so the padding widens the target. */
+.season-segment {
+  position: relative;
+  min-width: 0;
+  flex: 1;
+  padding-block: 6px;
+}
+
+.season-segment::before {
+  content: "";
+  display: block;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--segment);
+  transform-origin: left;
+  animation: progress-grow 500ms var(--ease-soft);
+}
+
+.season-segment[data-status="idea"] {
+  --segment: var(--color-violet);
+}
+
+.season-segment[data-status="drafting"] {
+  --segment: var(--color-neon);
+}
+
+.season-segment[data-status="done"] {
+  --segment: #22c55e;
+}
+
+.season-segment[data-flip] .chip-tooltip {
+  right: 0;
+  left: auto;
+}
+
+.season-card-arrow {
+  width: 1rem;
+  height: 1rem;
+  transition: transform 200ms var(--ease-soft);
+}
+
+@media (hover: hover) {
+  .season-card:hover .season-cover-shapes {
+    transform: translate3d(-10px, 5px, 0) scale(1.05);
+  }
+
+  .season-card:hover .season-cover-bunny {
+    transform: translate3d(5px, -3px, 0);
+  }
+
+  .season-card:hover .ep-title-underline {
+    opacity: 1;
+  }
+
+  .season-card:hover .season-card-arrow {
+    transform: translateX(4px);
+  }
+
+  .season-card:hover .avatar {
+    transform: translateX(calc(var(--m) * 3px));
+  }
+
+  .season-segment:hover .chip-tooltip {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* ---- Episode card ---- */
 
 .episode-card {
@@ -994,6 +1170,15 @@ h4 {
 @keyframes shimmer {
   to {
     transform: translateX(100%);
+  }
+}
+
+/* These only ever respond to a mouse. Left in the layout on touch screens,
+   even invisible, they widen the page past the phone's viewport. */
+@media (hover: none) {
+  .hero-glow,
+  .chip-tooltip {
+    display: none;
   }
 }
 

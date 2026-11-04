@@ -192,7 +192,10 @@ async function addSample() {
   await db.transaction(async (tx) => {
     const [{ id: seriesId }] = await tx
       .insert(series)
-      .values({ title: SAMPLE_SERIES_TITLE })
+      .values({
+        title: SAMPLE_SERIES_TITLE,
+        description: "A courier, a street that rearranges itself, and the lamp that remembers.",
+      })
       .returning({ id: series.id });
 
     const cast = await tx

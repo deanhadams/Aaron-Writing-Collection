@@ -84,7 +84,7 @@ Set by `data-kind` on an element, as `--kind` (exact color, decoration only) and
 | Variable | Stops | Use |
 |---|---|---|
 | `--gradient-signature` | `#2563FF` → `#7C5CFF` → `#00D9FF` | Decoration only: borders, progress bars, lines |
-| `--gradient-cover` | blue → violet → pink → cyan | Season cover art; set `--cover-angle` per season |
+| `--gradient-cover-stops` | blue → violet → pink → cyan | Season cover art. Stops only: a `var()` inside a `:root` gradient is fixed at `:root`, so build the gradient where `--cover-angle` is set |
 | `--gradient-text` | `#1D4ED8` → `#6236E8` → `#0E7490` | Gradient headings (`text-gradient`) |
 | `--gradient-text-shift` | Same hues, reordered | The hero title's crossfade |
 | `--gradient-button` | `#2563FF` → `#6B46F5` → `#0A78B5` | Anything with white text on it |
@@ -107,6 +107,7 @@ Fonts: **Outfit** (headings), **Inter** (body), **Courier Prime** (script text o
 - Animate `transform` and `opacity` only, under 300ms for interactions. Put glows on a pseudo-element and fade its opacity rather than animating `box-shadow`.
 - Prefer CSS animation. It works in Server Components and needs no JavaScript.
 - `prefers-reduced-motion` is handled once, at the end of `globals.css`. Elements must look finished with their animation removed.
+- Decorative and hover-only elements still count towards page width on phones, even at `opacity: 0`, and `overflow-x: clip` on `body` hides this from `scrollWidth`. Hide them under `@media (hover: none)`.
 - Mesh blobs are radial gradients, not blur filters. Phones drop `backdrop-filter` on cards, so keep blur layers few.
 
 ## Rules

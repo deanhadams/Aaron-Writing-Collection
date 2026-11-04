@@ -2,7 +2,7 @@ import "server-only";
 import { asc, desc, eq, sql } from "drizzle-orm";
 import { connection } from "next/server";
 import { db } from "@/lib/db";
-import { summarizeEpisode } from "@/lib/script/episode-stats";
+import { summarizeEpisode, summarizeSeason } from "@/lib/script/episode-stats";
 import {
   characters,
   episodes,
@@ -20,29 +20,84 @@ const UUID =
 // for a mistyped URL. Treat those as "not found" instead.
 const isUuid = (value: string) => UUID.test(value);
 
+// Counted in SQL so listing pages never download every scene's beats.
+const sceneStatFields = {
+  id: scenes.id,
+  episodeId: scenes.episodeId,
+  timecode: scenes.timecode,
+  updatedAt: scenes.updatedAt,
+  editor: users.name,
+  lineCount: sql<number>`(
+    select count(*)::int from jsonb_array_elements(${scenes.beats}) as beat
+    where beat->>'type' in ('dialogue', 'vo')
+  )`,
+  firstVisual: sql<string | null>`jsonb_path_query_first(
+    ${scenes.beats}, '$[*] ? (@.type == "visual" && @.text != "").text'
+  ) #>> '{}'`,
+};
+
 // connection() keeps these reads at request time, so edits always show and
 // nothing is baked into the build.
 export async function getSeasonCards() {
   await connection();
 
-  return db
-    .select({
-      id: seasons.id,
-      number: seasons.number,
-      title: seasons.title,
-      seriesTitle: series.title,
-      episodeCount: sql<number>`count(distinct ${episodes.id})::int`,
-      doneCount: sql<number>`count(distinct ${episodes.id}) filter (where ${episodes.status} = 'done')::int`,
-      lastEdited: sql<Date | null>`max(${scenes.updatedAt})`.mapWith(
-        scenes.updatedAt,
+  // Four queries however many seasons there are.
+  const [seasonRows, episodeRows, sceneRows, speakerRows] = await Promise.all([
+    db
+      .select({
+        id: seasons.id,
+        number: seasons.number,
+        title: seasons.title,
+        seriesTitle: series.title,
+        description: series.description,
+      })
+      .from(seasons)
+      .innerJoin(series, eq(seasons.seriesId, series.id))
+      .orderBy(asc(series.title), asc(seasons.number)),
+    db
+      .select({
+        id: episodes.id,
+        seasonId: episodes.seasonId,
+        number: episodes.number,
+        title: episodes.title,
+        status: episodes.status,
+      })
+      .from(episodes)
+      .orderBy(asc(episodes.number)),
+    db
+      .select({ ...sceneStatFields, seasonId: episodes.seasonId })
+      .from(scenes)
+      .innerJoin(episodes, eq(scenes.episodeId, episodes.id))
+      .leftJoin(users, eq(scenes.updatedBy, users.id))
+      .orderBy(asc(scenes.position)),
+    db
+      .select({
+        seasonId: episodes.seasonId,
+        name: characters.name,
+        color: characters.color,
+        portraitKey: characters.portraitKey,
+      })
+      .from(sceneCharacters)
+      .innerJoin(scenes, eq(sceneCharacters.sceneId, scenes.id))
+      .innerJoin(episodes, eq(scenes.episodeId, episodes.id))
+      .innerJoin(characters, eq(sceneCharacters.characterId, characters.id))
+      .groupBy(episodes.seasonId, characters.id)
+      .orderBy(desc(sql`sum(${sceneCharacters.lineCount})`), asc(characters.name)),
+  ]);
+
+  return seasonRows.map((season) => {
+    const seasonEpisodes = episodeRows.filter((e) => e.seasonId === season.id);
+
+    return {
+      ...season,
+      episodes: seasonEpisodes,
+      speakers: speakerRows.filter((s) => s.seasonId === season.id),
+      stats: summarizeSeason(
+        seasonEpisodes,
+        sceneRows.filter((scene) => scene.seasonId === season.id),
       ),
-    })
-    .from(seasons)
-    .innerJoin(series, eq(seasons.seriesId, series.id))
-    .leftJoin(episodes, eq(episodes.seasonId, seasons.id))
-    .leftJoin(scenes, eq(scenes.episodeId, episodes.id))
-    .groupBy(seasons.id, series.id)
-    .orderBy(asc(series.title), asc(seasons.number));
+    };
+  });
 }
 
 export async function getSeason(seasonId: string) {
@@ -63,8 +118,7 @@ export async function getSeason(seasonId: string) {
 
   if (!season) return null;
 
-  // Three queries however many episodes there are. Counting in SQL means the
-  // page never has to download every scene's beats just to draw its cards.
+  // Three queries however many episodes there are.
   const [episodeRows, sceneRows, speakerRows] = await Promise.all([
     db
       .select({
@@ -78,19 +132,7 @@ export async function getSeason(seasonId: string) {
       .where(eq(episodes.seasonId, seasonId))
       .orderBy(asc(episodes.number)),
     db
-      .select({
-        episodeId: scenes.episodeId,
-        timecode: scenes.timecode,
-        updatedAt: scenes.updatedAt,
-        editor: users.name,
-        lineCount: sql<number>`(
-          select count(*)::int from jsonb_array_elements(${scenes.beats}) as beat
-          where beat->>'type' in ('dialogue', 'vo')
-        )`,
-        firstVisual: sql<string | null>`jsonb_path_query_first(
-          ${scenes.beats}, '$[*] ? (@.type == "visual" && @.text != "").text'
-        ) #>> '{}'`,
-      })
+      .select(sceneStatFields)
       .from(scenes)
       .innerJoin(episodes, eq(scenes.episodeId, episodes.id))
       .leftJoin(users, eq(scenes.updatedBy, users.id))

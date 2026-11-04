@@ -97,7 +97,7 @@ const OutroIcon = (props: IconProps) => (
   </Icon>
 );
 
-const PostCreditIcon = (props: IconProps) => (
+export const FilmIcon = (props: IconProps) => (
   <Icon {...props}>
     <rect x="3" y="5" width="18" height="14" rx="2" />
     <path d="M8 5v14M16 5v14M3 10h5M3 14h5M16 10h5M16 14h5" />
@@ -107,5 +107,5 @@ const PostCreditIcon = (props: IconProps) => (
 export const KIND_ICONS = {
   prologue: PrologueIcon,
   outro: OutroIcon,
-  post_credit: PostCreditIcon,
+  post_credit: FilmIcon,
 };

@@ -20,10 +20,11 @@ export function plural(count: number, noun: string) {
   return `${count} ${noun}${count === 1 ? "" : "s"}`;
 }
 
-const dateFormat = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" });
-
-export function formatDate(date: Date) {
-  return dateFormat.format(date);
+export function formatRuntime(minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours === 0) return `~${rest}m`;
+  return rest === 0 ? `~${hours}h` : `~${hours}h ${rest}m`;
 }
 
 const relativeFormat = new Intl.RelativeTimeFormat("en");
