@@ -33,7 +33,20 @@
 
   /* Exact brand colors: decoration only (borders, bars, glows, art). */
   --gradient-signature: linear-gradient(120deg, #2563ff, #7c5cff 55%, #00d9ff);
-  --gradient-cover-stops: #2563ff, #7c5cff 45%, #ff4fa3 75%, #00d9ff;
+
+  /* Season cover: the signature sweep, muted. Tune the cover from here. */
+  --season-base-from: #0a1236;
+  --season-base-to: #1b1464;
+  --season-mid-blue: #1d3fbf;
+  --season-mid-violet: #4b2bb5;
+  --season-edge-magenta: #8a1f6b;
+  --season-edge-teal: #0b6f8f;
+  --season-glow: #2563ff;
+  --season-rim: #00d9ff;
+  --season-numeral-end: #bfdbfe;
+  --gradient-cover-stops:
+    var(--season-base-from), var(--season-base-to) 32%, var(--season-mid-blue) 66%,
+    var(--season-mid-violet);
 
   /* Same hues, deepened until they pass WCAG AA with text. */
   --gradient-text: linear-gradient(110deg, #1d4ed8, #6236e8 55%, #0e7490);
@@ -727,38 +740,131 @@ h4 {
   font-size: 5rem;
 }
 
-/* Sits on the bright stops of the gradient, so white text needs a backing. */
+.season-cover .ep-numeral::before {
+  inset: -1.5rem -2.5rem;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--season-glow) 50%, transparent),
+    transparent
+  );
+}
+
+/* The stroke copy sits under the fill and blends with screen, so this glow
+   needs no filter and stays behind the numeral. */
+.season-cover .ep-numeral-stroke {
+  text-shadow: 0 0 1.25rem rgb(0 217 255 / 0.5);
+}
+
+.season-cover .ep-numeral-fill {
+  background-image: linear-gradient(to bottom, white 30%, var(--season-numeral-end));
+}
+
 .season-cover-label {
   display: inline-block;
-  padding: 0.05rem 0.4rem;
-  border-radius: var(--radius-sm);
-  background: rgb(11 27 58 / 0.5);
   color: white;
 }
 
-/* Oversized so the shapes can drift without ever showing an edge. */
+/* The chip reads from data-status, so these outrank the light pill's colors. */
+.season-cover .ep-status[data-status] {
+  border-color: rgb(255 255 255 / 0.3);
+  background: rgb(255 255 255 / 0.14);
+  color: white;
+}
+
+.season-cover .ep-status[data-status="done"] {
+  --status: #22c55e;
+}
+
+.season-cover .ep-status-dot {
+  box-shadow: 0 0 6px 1px var(--status);
+}
+
+.season-cover .ep-status svg {
+  color: var(--status);
+  filter: drop-shadow(0 0 3px var(--status));
+}
+
+/* The accents are their own layers, so the corner holds whatever angle a
+   season's gradient takes. */
 .season-cover-art {
   position: absolute;
   inset: 0;
-  background: linear-gradient(var(--cover-angle), var(--gradient-cover-stops));
+  background:
+    radial-gradient(26% 46% at 100% 100%, var(--season-edge-teal), transparent),
+    radial-gradient(48% 76% at 100% 100%, var(--season-edge-magenta), transparent),
+    linear-gradient(var(--cover-angle), var(--gradient-cover-stops));
+}
+
+/* Rim light: separates the dark cover from the light card body. */
+.season-cover-art::before {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 1rem;
+  background:
+    linear-gradient(var(--season-rim), var(--season-rim)) bottom / 100% 1px no-repeat,
+    linear-gradient(to top, color-mix(in srgb, var(--season-rim) 22%, transparent), transparent);
+  mask-image: linear-gradient(to right, transparent, black 25%, black 75%, transparent);
+  opacity: 0.6;
 }
 
 .season-cover-art::after {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(rgb(255 255 255 / 0.2) 1px, transparent 1px);
+  background-image: radial-gradient(rgb(255 255 255 / 0.1) 1px, transparent 1px);
   background-size: 16px 16px;
   mask-image: linear-gradient(to left, black, transparent 70%);
 }
 
+/* Oversized so the shapes can drift without ever showing an edge. */
 .season-cover-shapes {
   position: absolute;
   inset: -24px;
   background:
-    radial-gradient(9rem 7rem at 64% 22%, rgb(255 255 255 / 0.3), transparent),
-    radial-gradient(11rem 8rem at 30% 105%, rgb(0 217 255 / 0.35), transparent);
+    radial-gradient(9rem 7rem at 64% 22%, rgb(255 255 255 / 0.07), transparent),
+    radial-gradient(11rem 8rem at 30% 105%, rgb(11 111 143 / 0.26), transparent);
   transition: transform 600ms var(--ease-soft);
+}
+
+/* Two layers on different clocks, kept clear of the chip and the numeral. */
+.season-cover-stars {
+  position: absolute;
+  inset: 0;
+}
+
+.season-cover-stars::before,
+.season-cover-stars::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.55;
+  animation: twinkle 6s ease-in-out infinite alternate;
+}
+
+.season-cover-stars::before {
+  background:
+    radial-gradient(circle at 56% 34%, white 0 1px, transparent 1.5px),
+    radial-gradient(circle at 37% 78%, white 0 1px, transparent 1.5px),
+    radial-gradient(circle at 66% 82%, white 0 1px, transparent 1.5px);
+}
+
+.season-cover-stars::after {
+  background:
+    radial-gradient(circle at 48% 58%, white 0 0.75px, transparent 1.25px),
+    radial-gradient(circle at 62% 14%, white 0 0.75px, transparent 1.25px),
+    radial-gradient(circle at 72% 52%, white 0 0.75px, transparent 1.25px);
+  animation-duration: 9s;
+  animation-delay: -4s;
+}
+
+@keyframes twinkle {
+  from {
+    opacity: 0.15;
+  }
+  to {
+    opacity: 0.85;
+  }
 }
 
 .season-cover-bunny {
@@ -767,9 +873,17 @@ h4 {
   left: 0.25rem;
   width: 10.5rem;
   height: 10.5rem;
-  opacity: 0.2;
-  mix-blend-mode: overlay;
+  opacity: 0.09;
   transition: transform 600ms var(--ease-soft);
+}
+
+/* The logo is full color. Group opacity keeps its overlaps from doubling. */
+.season-cover-bunny g {
+  fill: white;
+}
+
+.season-cover-bunny g:last-of-type {
+  fill: var(--season-base-from);
 }
 
 .season-segments {

@@ -79,12 +79,16 @@ Set by `data-kind` on an element, as `--kind` (exact color, decoration only) and
 
 `coverStyle(number)` in [components/library/episode-cover.tsx](components/library/episode-cover.tsx) cycles through six gradients. It sets `--cover-a/b/c`, `--cover-angle`, `--accent` (decoration) and `--kind-text` (AA text). `--cover-a` must stay dark enough for white text. Status colors: idea `violet`, drafting `neon`, done `#22C55E` for dots and bars, with the `status-*` colors for their text.
 
+### Season covers
+
+Always dark, whatever the page around them. The palette is the `--season-*` variables in `:root`: tune it there. `--season-edge-magenta` and `--season-edge-teal` are fixed corner layers over the gradient, so they stay lower right at every `--cover-angle`. No bright pink, bright cyan or pastel areas inside the cover; `--season-rim` and the numeral glow are the only cyan, both low strength. All text on the cover is white, and its chip overrides the light pill.
+
 ### Gradients (CSS variables)
 
 | Variable | Stops | Use |
 |---|---|---|
 | `--gradient-signature` | `#2563FF` → `#7C5CFF` → `#00D9FF` | Decoration only: borders, progress bars, lines |
-| `--gradient-cover-stops` | blue → violet → pink → cyan | Season cover art. Stops only: a `var()` inside a `:root` gradient is fixed at `:root`, so build the gradient where `--cover-angle` is set |
+| `--gradient-cover-stops` | navy → indigo → dark blue → dark violet | Season cover art. Stops only: a `var()` inside a `:root` gradient is fixed at `:root`, so build the gradient where `--cover-angle` is set |
 | `--gradient-text` | `#1D4ED8` → `#6236E8` → `#0E7490` | Gradient headings (`text-gradient`) |
 | `--gradient-text-shift` | Same hues, reordered | The hero title's crossfade |
 | `--gradient-button` | `#2563FF` → `#6B46F5` → `#0A78B5` | Anything with white text on it |

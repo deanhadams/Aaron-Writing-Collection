@@ -38,6 +38,7 @@ export function SeasonCover({
     <div className="season-cover">
       <span aria-hidden className="season-cover-art">
         <span className="season-cover-shapes" />
+        <span className="season-cover-stars" />
         <LogoMark className="season-cover-bunny" />
       </span>
 
