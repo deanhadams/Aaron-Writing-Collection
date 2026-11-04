@@ -1,25 +1,40 @@
 import type { CSSProperties } from "react";
 import type { Beat } from "@/lib/db/schema";
-import { voiceName } from "@/lib/script/scene-summary";
+import { speakerParts, splitSpeakers, voiceName } from "@/lib/script/scene-summary";
+
+type Colors = Map<string, string | null>;
+
+const DEFAULT_COLOR = "var(--color-primary-strong)";
+
+function SpeakerName({ name, colors }: { name: string; colors: Colors }) {
+  return (
+    <span
+      className="rounded-md px-2 py-0.5 font-bold uppercase text-(--char) [background:color-mix(in_srgb,var(--char)_7%,transparent)]"
+      style={{ "--char": colors.get(name) || DEFAULT_COLOR } as CSSProperties}
+    >
+      {name}
+    </span>
+  );
+}
 
 function Dialogue({
-  name,
+  names,
+  suffix,
   beat,
-  color,
+  colors,
 }: {
-  name: string;
+  names: string;
+  suffix?: string;
   beat: Beat;
-  color: string;
+  colors: Colors;
 }) {
   return (
     <div className="mx-auto my-7 max-w-md">
       <p className="text-center">
-        <span
-          className="rounded-md px-2 py-0.5 font-bold uppercase text-(--char) [background:color-mix(in_srgb,var(--char)_7%,transparent)]"
-          style={{ "--char": color } as CSSProperties}
-        >
-          {name}
-        </span>
+        {speakerParts(names).map(({ text, isName }, index) =>
+          isName ? <SpeakerName key={index} name={text} colors={colors} /> : text,
+        )}
+        {suffix && <span className="font-bold text-muted"> {suffix}</span>}
       </p>
       {beat.parenthetical && (
         <p className="text-center italic text-muted">({beat.parenthetical})</p>
@@ -50,24 +65,23 @@ export function ScriptBeat({
   characterColors,
 }: {
   beat: Beat;
-  characterColors: Map<string, string | null>;
+  characterColors: Colors;
 }) {
   const character = beat.character?.toUpperCase();
-  const color =
-    (character && characterColors.get(character)) ||
-    "var(--color-primary-strong)";
 
   switch (beat.type) {
     case "dialogue":
-      return <Dialogue name={character ?? ""} beat={beat} color={color} />;
-    case "vo":
-      return (
-        <Dialogue
-          name={voiceName(character, Boolean(character && characterColors.has(character)))}
-          beat={beat}
-          color={color}
-        />
+      return <Dialogue names={character ?? ""} beat={beat} colors={characterColors} />;
+    case "vo": {
+      const hasRecord = splitSpeakers(character ?? "").some((name) => characterColors.has(name));
+      const label = voiceName(character, hasRecord);
+
+      return character && hasRecord ? (
+        <Dialogue names={character} suffix="(V.O.)" beat={beat} colors={characterColors} />
+      ) : (
+        <Dialogue names={label} beat={beat} colors={characterColors} />
       );
+    }
     case "visual":
       return (
         <p className="my-5 whitespace-pre-wrap border-l-2 border-primary pl-4 italic">

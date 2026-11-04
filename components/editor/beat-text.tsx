@@ -7,6 +7,7 @@ import { createBeat, nextType } from "@/lib/editor/store";
 import { hasSpeaker } from "@/lib/script/beat-fields";
 import { BEAT_LABELS } from "./beat-types";
 import { useEditor, useFocusField, useRegisterField } from "./editor-context";
+import { useAutoGrow } from "./use-auto-grow";
 
 const PLACEHOLDERS: Record<BeatType, string> = {
   dialogue: "What do they say?",
@@ -29,6 +30,7 @@ export function BeatText({ beat, label }: { beat: Beat; label: string }) {
   const register = useRegisterField(beat.id, "text");
   const element = useRef<HTMLTextAreaElement | null>(null);
   const isTabReleased = useRef(false);
+  useAutoGrow(element, beat.text);
   const [menuIndex, setMenuIndex] = useState(0);
   const [isMenuDismissed, setMenuDismissed] = useState(false);
 

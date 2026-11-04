@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { sceneCharacters, sceneRevisions, scenes, type Beat } from "@/lib/db/schema";
 import { heartbeat, leaveScene } from "./presence";
-import { listRevisions, restoreRevision, saveScene } from "./save-scene";
+import { listRevisions, REVISION_WINDOW_MS, restoreRevision, saveScene } from "./save-scene";
 import { createTestDb, seedScene } from "./test-db";
 
 const line = (id: string, character: string, text: string): Beat => ({ id, type: "dialogue", character, text });
@@ -110,7 +110,149 @@ describe("scene saves", () => {
     expect(result).toEqual({ status: "not_found" });
   });
 
+  describe("coalescing revisions", () => {
+    /** Moves every saved time back, as if these saves happened a while ago. */
+    const age = async (ms: number) => {
+      const past = (date: Date) => new Date(date.getTime() - ms);
+      await db.update(scenes).set({ updatedAt: past((await row()).updatedAt) }).where(eq(scenes.id, sceneId));
+      for (const revision of await revisions()) {
+        await db.update(sceneRevisions).set({ savedAt: past(revision.savedAt) }).where(eq(sceneRevisions.id, revision.id));
+      }
+    };
+    const texts = async () => (await listRevisions(db, sceneId)).map(({ preview }) => preview[0].text);
+
+    it("keeps one row for a burst of saves, holding the last version replaced", async () => {
+      await save(1, [line("a", "REVOC", "One")]);
+      await save(2, [line("a", "REVOC", "Two")]);
+      await save(3, [line("a", "REVOC", "Three")]);
+      await save(4, [line("a", "REVOC", "Four")]);
+
+      expect(await texts()).toEqual(["Three", "Original"]);
+      expect((await row()).beats[0].text).toBe("Four");
+    });
+
+    it("starts a new row once the window has passed", async () => {
+      await save(1, [line("a", "REVOC", "One")]);
+      await save(2, [line("a", "REVOC", "Two")]);
+      await age(REVISION_WINDOW_MS + 1000);
+      await save(3, [line("a", "REVOC", "Three")]);
+      await save(4, [line("a", "REVOC", "Four")]);
+
+      expect(await texts()).toEqual(["Three", "Two", "Original"]);
+    });
+
+    it("counts the window from when the row was written, so constant editing still splits", async () => {
+      await save(1, [line("a", "REVOC", "One")]);
+      await save(2, [line("a", "REVOC", "Two")]);
+      const [first] = await revisions().then((rows) => rows.filter((r) => r.savedBy));
+      const startedAt = first.savedAt;
+
+      await save(3, [line("a", "REVOC", "Three")]);
+
+      const [merged] = await revisions().then((rows) => rows.filter((r) => r.savedBy));
+      expect(merged.savedAt).toEqual(startedAt);
+    });
+
+    it("never merges two people, and keeps each one's last version", async () => {
+      await save(1, [line("a", "REVOC", "Dean one")]);
+      await save(2, [line("a", "REVOC", "Dean two")]);
+      await save(3, [line("a", "REVOC", "Kim one")], seed.kim.id);
+      await save(4, [line("a", "REVOC", "Kim two")], seed.kim.id);
+      await save(5, [line("a", "REVOC", "Dean three")]);
+
+      const history = await listRevisions(db, sceneId);
+      expect(history.map(({ savedBy, preview }) => [savedBy, preview[0].text])).toEqual([
+        ["Kim", "Kim two"],
+        ["Dean", "Dean two"],
+        [null, "Original"],
+      ]);
+    });
+
+    it("never merges into imported text", async () => {
+      await save(1, [line("a", "REVOC", "One")]);
+      expect(await texts()).toEqual(["Original"]);
+    });
+
+    it("merges the header along with the beats", async () => {
+      await save(1, [line("a", "REVOC", "One")]);
+      await saveScene(db, { sceneId, userId: seed.dean.id, version: 2, beats: [line("a", "REVOC", "Two")], title: "Renamed", timecode: "1:00", location: "ROOF" });
+      await save(3, [line("a", "REVOC", "Three")]);
+
+      const [latest] = await listRevisions(db, sceneId);
+      expect(latest).toMatchObject({ title: "Renamed", timecode: "1:00", location: "ROOF" });
+    });
+  });
+
   describe("restore", () => {
+    const restoreLatestOf = async (text: string, version: number) => {
+      const history = await listRevisions(db, sceneId);
+      const revision = history.find(({ preview }) => preview[0].text === text)!;
+      return restoreRevision(db, { sceneId, revisionId: revision.id, userId: seed.dean.id, version });
+    };
+
+    it("gets a sealed row of its own, even inside the window", async () => {
+      await save(1, [line("a", "REVOC", "One")]);
+      await save(2, [line("a", "REVOC", "Two")]);
+      await save(3, [line("a", "REVOC", "Three")]);
+
+      await restoreLatestOf("Original", 4);
+
+      const history = await listRevisions(db, sceneId);
+      expect(history.map(({ preview, sealed }) => [preview[0].text, sealed])).toEqual([
+        ["Three", true],
+        ["Two", false],
+        ["Original", false],
+      ]);
+    });
+
+    it("keeps the sealed row safe from the autosaves after it", async () => {
+      await save(1, [line("a", "REVOC", "Before restore")]);
+      await restoreLatestOf("Original", 2);
+
+      await save(3, [line("a", "REVOC", "After one")]);
+      await save(4, [line("a", "REVOC", "After two")]);
+      await save(5, [line("a", "REVOC", "After three")]);
+
+      const history = await listRevisions(db, sceneId);
+      const sealed = history.find(({ sealed }) => sealed);
+      expect(sealed?.preview[0].text).toBe("Before restore");
+      expect(history.map(({ preview }) => preview[0].text)).toContain("After two");
+    });
+
+    it("restores the title, timecode and location", async () => {
+      const edited = { title: "Second title", timecode: "2:00", location: "ROOF - NIGHT" };
+      await saveScene(db, { sceneId, userId: seed.dean.id, version: 1, beats: [line("a", "REVOC", "Two")], ...edited });
+      await saveScene(db, { sceneId, userId: seed.kim.id, version: 2, beats: [line("a", "REVOC", "Three")], title: "Third", timecode: null, location: null });
+
+      const result = await restoreLatestOf("Two", 3);
+
+      expect(result).toMatchObject({ status: "saved", ...edited });
+      expect(await row()).toMatchObject(edited);
+    });
+
+    it("clears a field the restored version had blank", async () => {
+      await saveScene(db, { sceneId, userId: seed.dean.id, version: 1, beats: [line("a", "REVOC", "Two")], title: "Named", timecode: null, location: null });
+      await saveScene(db, { sceneId, userId: seed.kim.id, version: 2, beats: [line("a", "REVOC", "Three")], title: "Named", timecode: "9:00", location: "ROOF" });
+
+      await restoreLatestOf("Two", 3);
+
+      expect(await row()).toMatchObject({ title: "Named", timecode: null, location: null });
+    });
+
+    it("keeps the current header when an old revision has none", async () => {
+      const [old] = await db
+        .insert(sceneRevisions)
+        .values({ sceneId, beats: [line("a", "REVOC", "Old")], savedAt: new Date("2020-01-01") })
+        .returning();
+
+      const result = await restoreRevision(db, { sceneId, revisionId: old.id, userId: seed.dean.id, version: 1 });
+
+      expect(result).toMatchObject({ status: "saved", title: "Start" });
+      const scene = await row();
+      expect(scene.title).toBe("Start");
+      expect(scene.beats[0].text).toBe("Old");
+    });
+
     it("saves the old beats as a new version with the current ones in history", async () => {
       await save(1, [line("a", "REVOC", "Second")], seed.kim.id);
       const [original] = await listRevisions(db, sceneId);
@@ -135,10 +277,8 @@ describe("scene saves", () => {
     it("rebuilds scene_characters from the restored beats", async () => {
       await save(1, [line("a", "REVOC", "One")]);
       await save(2, [line("a", "DESRUC", "Two")]);
-      const history = await listRevisions(db, sceneId);
-      const withRevoc = history.find(({ preview }) => preview[0].character === "REVOC")!;
 
-      await restoreRevision(db, { sceneId, revisionId: withRevoc.id, userId: seed.dean.id, version: 3 });
+      await restoreLatestOf("One", 3);
 
       expect(await links()).toEqual({ REVOC: 1 });
     });

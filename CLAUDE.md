@@ -34,7 +34,10 @@ scenes(id, episode_id, position, kind, title, timecode, location,
        beats jsonb, version, updated_by, updated_at)
          -- kind: prologue | scene | outro | post_credit
          -- beats: [{id, type, character?, parenthetical?, text}]
-scene_revisions(id, scene_id, beats jsonb, saved_by, saved_at)
+scene_revisions(id, scene_id, beats jsonb, title, timecode, location, sealed,
+                saved_by, saved_at)
+         -- autosaves share a row per person per 5 minutes; sealed rows never merge
+scene_presence(scene_id, user_id, last_seen)        -- editor heartbeat
 characters(id, series_id, name, full_name, role, gift, appearance,
            personality, backstory, color, portrait_key)
 character_images(id, character_id, r2_key, caption, position)

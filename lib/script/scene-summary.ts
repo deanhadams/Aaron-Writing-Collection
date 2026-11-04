@@ -7,6 +7,11 @@ export function splitSpeakers(name: string) {
   return name.split(/\s*[,&/]\s*/).filter(Boolean);
 }
 
+/** The names and separators of a speaker line, in order, as written. */
+export function speakerParts(name: string) {
+  return name.split(/(\s*[,&/]\s*)/).map((text, index) => ({ text, isName: index % 2 === 0 }));
+}
+
 export function speakerLineCounts(beats: Beat[]): Map<string, number> {
   const counts = new Map<string, number>();
 

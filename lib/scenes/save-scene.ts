@@ -24,6 +24,9 @@ export type SaveResult =
 
 export type SavedScene = SceneFields & { version: number };
 
+/** One revision per person per this long of editing, counted from when it was written. */
+export const REVISION_WINDOW_MS = 5 * 60 * 1000;
+
 // jsonb reorders keys, so beats compare field by field.
 const beatContent = ({ id, type, character, parenthetical, text }: Beat) => [
   id,
@@ -80,20 +83,59 @@ async function rebuildSceneCharacters(
   if (links.length > 0) await tx.insert(sceneCharacters).values(links);
 }
 
-// The revision keeps the version being replaced, credited to whoever saved it.
+type LockedScene = NonNullable<Awaited<ReturnType<typeof lockScene>>>;
+
+/**
+ * The revision keeps the version being replaced, credited to whoever saved it.
+ * Saves by one person within the window share a row, which ends up holding the
+ * last version they wrote in it. A restore always seals a new row of its own.
+ */
+async function keepRevision(tx: Transaction, sceneId: string, current: LockedScene, seal: boolean) {
+  const { beats, title, timecode, location, updatedBy, updatedAt } = current;
+  const content = { beats, title, timecode, location };
+
+  const [latest] = await tx
+    .select({
+      id: sceneRevisions.id,
+      savedBy: sceneRevisions.savedBy,
+      savedAt: sceneRevisions.savedAt,
+      sealed: sceneRevisions.sealed,
+    })
+    .from(sceneRevisions)
+    .where(eq(sceneRevisions.sceneId, sceneId))
+    .orderBy(desc(sceneRevisions.savedAt), desc(sceneRevisions.id))
+    .limit(1);
+
+  const canMerge =
+    !seal &&
+    latest &&
+    !latest.sealed &&
+    updatedBy !== null &&
+    latest.savedBy === updatedBy &&
+    updatedAt.getTime() - latest.savedAt.getTime() < REVISION_WINDOW_MS;
+
+  if (canMerge) {
+    await tx.update(sceneRevisions).set(content).where(eq(sceneRevisions.id, latest.id));
+  } else {
+    await tx.insert(sceneRevisions).values({
+      ...content,
+      sceneId,
+      sealed: seal,
+      savedBy: updatedBy,
+      savedAt: updatedAt,
+    });
+  }
+}
+
 async function writeVersion(
   tx: Transaction,
   sceneId: string,
-  current: NonNullable<Awaited<ReturnType<typeof lockScene>>>,
+  current: LockedScene,
   fields: SceneFields,
   userId: string,
+  { seal = false } = {},
 ) {
-  await tx.insert(sceneRevisions).values({
-    sceneId,
-    beats: current.beats,
-    savedBy: current.updatedBy,
-    savedAt: current.updatedAt,
-  });
+  await keepRevision(tx, sceneId, current, seal);
 
   const version = current.version + 1;
   await tx
@@ -133,7 +175,7 @@ export async function saveScene(
 export async function restoreRevision(
   db: Database,
   input: { sceneId: string; revisionId: string; userId: string; version: number },
-): Promise<SaveResult | { status: "saved"; version: number; beats: Beat[] }> {
+): Promise<SaveResult | ({ status: "saved"; version: number } & SceneFields)> {
   const { sceneId, revisionId, userId, version } = input;
 
   return db.transaction(async (tx) => {
@@ -142,16 +184,27 @@ export async function restoreRevision(
     if (current.version !== version) return { status: "conflict", version: current.version };
 
     const [revision] = await tx
-      .select({ beats: sceneRevisions.beats })
+      .select({
+        beats: sceneRevisions.beats,
+        title: sceneRevisions.title,
+        timecode: sceneRevisions.timecode,
+        location: sceneRevisions.location,
+      })
       .from(sceneRevisions)
       .where(and(eq(sceneRevisions.id, revisionId), eq(sceneRevisions.sceneId, sceneId)));
     if (!revision) return { status: "not_found" };
 
-    const { title, timecode, location } = current;
-    const fields = { title, timecode, location, beats: revision.beats };
-    const saved = await writeVersion(tx, sceneId, current, fields, userId);
+    // Revisions from before these columns have none, so the header stays as it is.
+    const hasHeader = Boolean(revision.title || revision.timecode || revision.location);
+    const fields = {
+      title: hasHeader ? revision.title : current.title,
+      timecode: hasHeader ? revision.timecode : current.timecode,
+      location: hasHeader ? revision.location : current.location,
+      beats: revision.beats,
+    };
+    const saved = await writeVersion(tx, sceneId, current, fields, userId, { seal: true });
 
-    return { status: "saved", version: saved, beats: revision.beats };
+    return { status: "saved", version: saved, ...fields };
   });
 }
 
@@ -178,6 +231,10 @@ export async function listRevisions(db: Database, sceneId: string) {
     .select({
       id: sceneRevisions.id,
       beats: sceneRevisions.beats,
+      title: sceneRevisions.title,
+      timecode: sceneRevisions.timecode,
+      location: sceneRevisions.location,
+      sealed: sceneRevisions.sealed,
       savedAt: sceneRevisions.savedAt,
       savedBy: users.name,
     })

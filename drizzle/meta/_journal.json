@@ -15,6 +15,13 @@
       "when": 1793788007142,
       "tag": "0001_happy_praxagora",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793789850772,
+      "tag": "0002_hot_stone_men",
+      "breakpoints": true
     }
   ]
 }

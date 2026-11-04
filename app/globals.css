@@ -1414,6 +1414,16 @@ h4 {
   text-align: left;
 }
 
+.history-tag {
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-violet) 15%, white);
+  color: var(--color-status-idea);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
 .history-preview {
   padding: 0 0.75rem 0.75rem;
   border-top: 1px solid var(--color-line);

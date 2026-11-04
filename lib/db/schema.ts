@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -120,6 +121,12 @@ export const sceneRevisions = pgTable(
       .notNull()
       .references(() => scenes.id, { onDelete: "cascade" }),
     beats: jsonb("beats").$type<Beat[]>().notNull(),
+    // Empty on revisions from before these columns existed.
+    title: text("title"),
+    timecode: text("timecode"),
+    location: text("location"),
+    // Set on the row a restore writes, so autosaves never merge into it.
+    sealed: boolean("sealed").notNull().default(false),
     savedBy: uuid("saved_by").references(() => users.id, {
       onDelete: "set null",
     }),

@@ -32,6 +32,10 @@ export async function fetchScene(sceneId: string): Promise<LatestScene | null> {
 
 export type Revision = {
   id: string;
+  title: string | null;
+  timecode: string | null;
+  location: string | null;
+  sealed: boolean;
   savedAt: string;
   savedBy: string | null;
   beatCount: number;
@@ -45,7 +49,7 @@ export async function fetchRevisions(sceneId: string): Promise<Revision[]> {
 }
 
 export type RestoreResult =
-  | { kind: "saved"; version: number; beats: Beat[] }
+  | ({ kind: "saved"; version: number } & SceneFields)
   | { kind: "conflict" }
   | { kind: "failed" };
 
@@ -62,8 +66,10 @@ export async function restoreVersion(
   if (response?.status === 409) return { kind: "conflict" };
   if (!response?.ok) return { kind: "failed" };
 
-  const { version: saved, beats } = (await response.json()) as { version: number; beats: Beat[] };
-  return { kind: "saved", version: saved, beats };
+  const { version: saved, title, timecode, location, beats } = (await response.json()) as SceneFields & {
+    version: number;
+  };
+  return { kind: "saved", version: saved, title, timecode, location, beats };
 }
 
 export async function sendHeartbeat(sceneId: string) {
