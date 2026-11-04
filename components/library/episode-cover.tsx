@@ -50,10 +50,12 @@ export function StatusChip({
 
 export function EpisodeCover({
   number,
-  children,
+  status,
+  toolbar,
 }: {
   number: number;
-  children: ReactNode;
+  status: ReactNode;
+  toolbar: ReactNode;
 }) {
   return (
     <div className="ep-cover">
@@ -67,7 +69,8 @@ export function EpisodeCover({
           <span className="ep-numeral-fill">{number}</span>
         </p>
       </div>
-      {children}
+      {status}
+      <div className="ep-toolbar">{toolbar}</div>
     </div>
   );
 }

@@ -21,7 +21,7 @@ export function StatusSelect({
       <select aria-label={label} value={status} onChange={(event) => onChange(event.target.value as Status)}>
         {STATUSES.map((value) => (
           <option key={value} value={value}>
-            {value}
+            {value[0].toUpperCase() + value.slice(1)}
           </option>
         ))}
       </select>

@@ -148,7 +148,7 @@ export async function getSeason(seasonId: string) {
       .where(and(eq(episodes.seasonId, seasonId), liveEpisode))
       .orderBy(asc(episodes.number)),
     db
-      .select(sceneStatFields)
+      .select({ ...sceneStatFields, kind: scenes.kind, title: scenes.title })
       .from(scenes)
       .innerJoin(episodes, eq(scenes.episodeId, episodes.id))
       .leftJoin(users, eq(scenes.updatedBy, users.id))
@@ -177,6 +177,10 @@ export async function getSeason(seasonId: string) {
       stats: summarizeEpisode(
         sceneRows.filter((scene) => scene.episodeId === episode.id),
       ),
+      // For the progress bar: every scene's title, already in this one query.
+      scenes: sceneRows
+        .filter((scene) => scene.episodeId === episode.id)
+        .map(({ id, kind, title }) => ({ id, kind, title })),
       speakers: speakerRows.filter((speaker) => speaker.episodeId === episode.id).map(withPortrait),
     })),
   };

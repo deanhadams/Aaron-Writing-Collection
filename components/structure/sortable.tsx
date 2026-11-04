@@ -81,7 +81,7 @@ export function SortableBoard({
 }
 
 export function useSortableRow(id: string) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging, isOver } = useSortable({
     id,
     animateLayoutChanges,
     transition: SETTLE,
@@ -90,12 +90,23 @@ export function useSortableRow(id: string) {
   return {
     setNodeRef,
     isDragging,
+    isDropTarget: isOver && !isDragging,
     style: { transform: CSS.Translate.toString(transform), transition },
     handle: { ref: setActivatorNodeRef, ...attributes, ...listeners },
   };
 }
 
 export type RowHandle = ReturnType<typeof useSortableRow>["handle"];
+
+export function DragHandle({ label, handle, className }: { label: string; handle: RowHandle; className: string }) {
+  const { ref, ...handleProps } = handle;
+
+  return (
+    <button ref={ref} type="button" className={className} {...handleProps} aria-label={`Drag to reorder ${label}`}>
+      <GripIcon />
+    </button>
+  );
+}
 
 /** The handle is for a mouse or a finger; the two buttons do the same from a keyboard. */
 export function ReorderTools({

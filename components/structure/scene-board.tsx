@@ -16,8 +16,9 @@ import {
   sendSceneOrder,
 } from "@/lib/structure/client";
 import { moveItem } from "@/lib/structure/order";
-import { ActionMenu, MenuItem } from "./action-menu";
+import { ActionMenu, MenuDivider, MenuItem } from "./action-menu";
 import { DeleteDialog } from "./episode-dialogs";
+import { CopyIcon, MoveToIcon, PencilIcon, TrashIcon } from "./icons";
 import { AddSceneDialog, MoveSceneDialog, SceneDetailsDialog, type SceneForm } from "./scene-dialogs";
 import { InsertLine, ReorderTools, SortableBoard, useSortableRow } from "./sortable";
 import { useBoard } from "./use-board";
@@ -59,10 +60,17 @@ function SceneTile({
             <>
               <ReorderTools label={label} handle={handle} index={index} count={count} onMove={onMove} />
               <ActionMenu label={`Options for ${label}`}>
-                <MenuItem onSelect={() => onOpen({ type: "details", scene })}>Rename or change kind</MenuItem>
-                <MenuItem onSelect={() => onDuplicate(scene)}>Duplicate</MenuItem>
-                <MenuItem onSelect={() => onOpen({ type: "move", scene })}>Move to…</MenuItem>
-                <MenuItem danger onSelect={() => onOpen({ type: "delete", scene })}>
+                <MenuItem icon={<PencilIcon />} onSelect={() => onOpen({ type: "details", scene })}>
+                  Rename or change kind
+                </MenuItem>
+                <MenuItem icon={<CopyIcon />} onSelect={() => onDuplicate(scene)}>
+                  Duplicate
+                </MenuItem>
+                <MenuItem icon={<MoveToIcon />} onSelect={() => onOpen({ type: "move", scene })}>
+                  Move to…
+                </MenuItem>
+                <MenuDivider />
+                <MenuItem icon={<TrashIcon />} danger onSelect={() => onOpen({ type: "delete", scene })}>
                   Delete
                 </MenuItem>
               </ActionMenu>

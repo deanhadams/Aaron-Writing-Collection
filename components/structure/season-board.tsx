@@ -16,7 +16,8 @@ import {
 } from "@/lib/structure/client";
 import type { EpisodePatch } from "@/lib/structure/episode";
 import { moveItem, nextNumber, renumber, type Status } from "@/lib/structure/order";
-import { ActionMenu, MenuItem } from "./action-menu";
+import { DownIcon, CheckCircleIcon, PencilIcon, TrashIcon, UpIcon } from "./icons";
+import { ActionMenu, MenuDivider, MenuItem } from "./action-menu";
 import {
   DeleteDialog,
   EpisodeDeleteText,
@@ -26,7 +27,7 @@ import {
 } from "./episode-dialogs";
 import { RecentlyDeletedDialog } from "./recently-deleted-dialog";
 import { SeasonOverview } from "./season-overview";
-import { ReorderTools, SortableBoard, useSortableRow } from "./sortable";
+import { DragHandle, SortableBoard, useSortableRow } from "./sortable";
 import { StatusSelect } from "./status-select";
 import { useBoard } from "./use-board";
 import { useFeedback } from "./use-feedback";
@@ -55,11 +56,17 @@ function EpisodeTile({
   onStatus: (id: string, status: Status) => void;
   onOpen: (dialog: Dialog) => void;
 }) {
-  const { setNodeRef, style, handle, isDragging } = useSortableRow(episode.id);
+  const { setNodeRef, style, handle, isDragging, isDropTarget } = useSortableRow(episode.id);
   const label = `Episode ${episode.number}`;
 
   return (
-    <li ref={setNodeRef} style={style} data-dragging={isDragging || undefined} className="sort-row">
+    <li
+      ref={setNodeRef}
+      style={style}
+      data-dragging={isDragging || undefined}
+      data-drop-target={isDropTarget || undefined}
+      className="sort-row"
+    >
       <div className="rise h-full" style={{ "--i": index } as CSSProperties}>
         <EpisodeCard
           episode={episode}
@@ -67,13 +74,30 @@ function EpisodeTile({
           statusControl={
             <StatusSelect status={episode.status} label={`Status of ${label}`} onChange={(status) => onStatus(episode.id, status)} />
           }
-          tools={
+          toolbar={
             <>
-              <ReorderTools label={label} handle={handle} index={index} count={count} onMove={onMove} />
-              <ActionMenu label={`Options for ${label}`}>
-                <MenuItem onSelect={() => onOpen({ type: "settings", episode })}>Rename and settings</MenuItem>
-                {episode.status !== "done" && <MenuItem onSelect={() => onStatus(episode.id, "done")}>Mark done</MenuItem>}
-                <MenuItem danger onSelect={() => onOpen({ type: "delete", episode })}>
+              <DragHandle label={label} handle={handle} className="ep-tool ep-tool-handle" />
+              <ActionMenu label={`Options for ${label}`} triggerClass="ep-tool" keepFocusOn={index}>
+                <MenuItem icon={<PencilIcon />} onSelect={() => onOpen({ type: "settings", episode })}>
+                  Rename and settings
+                </MenuItem>
+                {episode.status !== "done" && (
+                  <MenuItem icon={<CheckCircleIcon />} onSelect={() => onStatus(episode.id, "done")}>
+                    Mark done
+                  </MenuItem>
+                )}
+                {index > 0 && (
+                  <MenuItem icon={<UpIcon />} onSelect={() => onMove(index, index - 1)}>
+                    Move up
+                  </MenuItem>
+                )}
+                {index < count - 1 && (
+                  <MenuItem icon={<DownIcon />} onSelect={() => onMove(index, index + 1)}>
+                    Move down
+                  </MenuItem>
+                )}
+                <MenuDivider />
+                <MenuItem icon={<TrashIcon />} danger onSelect={() => onOpen({ type: "delete", episode })}>
                   Delete
                 </MenuItem>
               </ActionMenu>

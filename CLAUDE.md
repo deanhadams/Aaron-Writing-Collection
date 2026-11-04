@@ -135,6 +135,8 @@ Pages use a board (`lib/structure/board.ts`, `useBoard`): a plain object outside
 
 - Soft delete sets `deleted_at` for 30 days. Read through `liveScene` and `liveEpisode` in `lib/db/live.ts`. A scene in a deleted episode keeps an empty `deleted_at`, so a restore brings back exactly what was live.
 - Delete, restore, reorder and move leave a scene's `version` and `updated_at` alone: they would give open editors a false conflict, and the importer would see an edit. They bump the list's version instead.
+- `ActionMenu` portals to the body, so no card can clip it, and becomes a bottom sheet on phones. It follows its trigger on scroll rather than closing, because a scroll can arrive just after it opens. Pass `keepFocusOn` when a row moves its own card.
+- `displayTitle` shows titles written in capitals as title case. It is display only: never save its result.
 - Rebuilds of `scene_characters` go through `rebuildSceneLinks` with live scenes only.
 - `lib/images.ts` reads a server setting, so it returns nothing in the browser. Pass finished urls to client components.
 - The importer matches on `import_key`, never on position, and never writes a position, number or episode to a row that exists.
