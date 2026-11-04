@@ -4,6 +4,7 @@
 //   npm run db:seed:sample -- --remove delete it
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
+import { slugify } from "../lib/characters/slug";
 import { db } from "../lib/db";
 import { speakerLineCounts } from "../lib/script/scene-summary";
 import {
@@ -200,7 +201,7 @@ async function addSample() {
 
     const cast = await tx
       .insert(characters)
-      .values(CAST.map((member) => ({ ...member, seriesId })))
+      .values(CAST.map((member) => ({ ...member, seriesId, slug: slugify(member.fullName) })))
       .returning({ id: characters.id, name: characters.name });
     const castIds = new Map(cast.map(({ id, name }) => [name, id]));
 

@@ -8,8 +8,8 @@ import { BeatList } from "./beat-list";
 import { EditorProvider } from "./editor-context";
 
 const CAST = [
-  { name: "REVOC", fullName: "Revoc Eriflleh", color: "#B4237A" },
-  { name: "DESRUC", fullName: "Desruc Nemo", color: "#0F766E" },
+  { name: "REVOC", fullName: "Revoc Eriflleh", color: "#B4237A", slug: "revoc-eriflleh", aliases: [] },
+  { name: "DESRUC", fullName: "Desruc Nemo", color: "#0F766E", slug: "desruc-nemo", aliases: ["DEZ"] },
 ];
 
 function setup(beats: Beat[]) {
@@ -164,6 +164,13 @@ describe("speakers", () => {
     await user.click(speaker());
     await user.keyboard("des{Enter}");
     expect(beats()[0].character).toBe("REVOC & DESRUC");
+  });
+
+  it("links a speaker to their card, and treats an alias as having one", () => {
+    setup([dialogue("REVOC & DEZ")]);
+    expect(screen.getByRole("link", { name: "REVOC" }).getAttribute("href")).toBe("/characters/revoc-eriflleh");
+    expect(screen.getByRole("link", { name: "DEZ" }).getAttribute("href")).toBe("/characters/desruc-nemo");
+    expect(screen.queryByText("no card yet")).toBeNull();
   });
 
   it("removes a speaker with its button", async () => {

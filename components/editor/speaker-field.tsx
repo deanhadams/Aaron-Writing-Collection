@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { readableColor } from "@/lib/characters/colors";
 import type { Beat } from "@/lib/db/schema";
 import { splitSpeakers } from "@/lib/script/scene-summary";
 import { useEditor, useFocusField, useRegisterField, type CastMember } from "./editor-context";
@@ -33,9 +35,9 @@ function SpeakerChip({ name, onRemove }: { name: string; onRemove: () => void })
   return (
     <span
       className="speaker-chip"
-      style={member?.color ? ({ "--char": member.color } as CSSProperties) : undefined}
+      style={member?.color ? ({ "--char": readableColor(member.color) } as CSSProperties) : undefined}
     >
-      {name}
+      {member ? <Link href={`/characters/${member.slug}`}>{name}</Link> : name}
       {!member && <span className="speaker-chip-tag">no card yet</span>}
       <button type="button" aria-label={`Remove speaker ${name}`} onClick={onRemove}>
         ×

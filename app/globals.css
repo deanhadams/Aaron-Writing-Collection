@@ -1467,6 +1467,378 @@ h4 {
   }
 }
 
+/* ---- Characters ---- */
+
+.portrait {
+  position: relative;
+  container-type: inline-size;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: linear-gradient(150deg, var(--char), color-mix(in srgb, var(--char) 70%, black));
+  font-family: var(--font-heading);
+  font-weight: 700;
+}
+
+.portrait-initial {
+  font-size: 40cqw;
+}
+
+.portrait-image {
+  position: absolute;
+  inset: 0;
+  background-position: center top;
+  background-size: cover;
+}
+
+.gallery-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.char-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 1.25rem;
+  list-style: none;
+}
+
+.char-card {
+  --press: 0.99;
+  position: relative;
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-xl);
+  transition: transform 200ms var(--ease-soft);
+}
+
+.char-card::after {
+  content: "";
+  position: absolute;
+  inset: -0.25rem;
+  z-index: -1;
+  border-radius: var(--radius-2xl);
+  background: color-mix(in srgb, var(--char) 35%, transparent);
+  box-shadow: 0 0 1.5rem color-mix(in srgb, var(--char) 55%, transparent);
+  opacity: 0;
+  transition: opacity 200ms var(--ease-soft);
+}
+
+.char-card-frame {
+  display: block;
+  padding: 2px;
+  border-radius: var(--radius-xl);
+  background: linear-gradient(150deg, var(--char), color-mix(in srgb, var(--char) 30%, white));
+}
+
+.char-card-body {
+  display: block;
+  padding: 0.6rem 0.25rem 0.25rem;
+}
+
+.char-card:focus-visible::after {
+  opacity: 1;
+}
+
+.char-chip {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--char-text) 12%, white);
+  color: var(--char-text);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.char-chip-quiet {
+  background: white;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--char-text) 35%, white);
+}
+
+@media (hover: hover) {
+  .char-card:hover {
+    transform: perspective(50rem) rotateX(2deg) rotateY(-3deg) translateY(-2px);
+  }
+
+  .char-card:hover::after {
+    opacity: 1;
+  }
+}
+
+.char-hero {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+  align-items: center;
+  gap: 1.75rem;
+  margin-bottom: 1.75rem;
+}
+
+.char-hero-portrait {
+  position: relative;
+}
+
+.char-hero-portrait::before {
+  content: "";
+  position: absolute;
+  inset: -2rem;
+  z-index: -1;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--char) 40%, transparent), transparent);
+}
+
+.char-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.lines-bars {
+  display: grid;
+  grid-template-columns: repeat(var(--count), minmax(0, 1fr));
+  gap: 2px;
+  align-items: end;
+  height: 7rem;
+  margin-top: 0.75rem;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.lines-bar {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+}
+
+.lines-bar-fill {
+  display: block;
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  background: var(--char);
+}
+
+/* Opens toward the middle of the chart, so it can never pass the page edge. */
+.lines-bar .chip-tooltip {
+  bottom: calc(100% + 0.25rem);
+  left: 0;
+  width: 12rem;
+  white-space: normal;
+  transform: none;
+}
+
+.lines-bar[data-side="end"] .chip-tooltip {
+  right: 0;
+  left: auto;
+}
+
+@media (hover: hover) {
+  .lines-bar:hover .chip-tooltip {
+    opacity: 1;
+  }
+}
+
+.appears-episode {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: white;
+}
+
+.appears-episode summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.partner {
+  display: grid;
+  justify-items: center;
+  gap: 0.15rem;
+  text-align: center;
+}
+
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+  gap: 0.75rem;
+  list-style: none;
+}
+
+.image-thumb {
+  position: relative;
+  min-width: 0;
+}
+
+.image-thumb[data-dragging] {
+  z-index: 5;
+}
+
+.image-thumb-open {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-line);
+  background-position: center;
+  background-size: cover;
+}
+
+.image-thumb-tools {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.15rem;
+}
+
+.image-tool {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius-md);
+  color: var(--color-muted);
+  touch-action: none;
+}
+
+.image-tool:hover {
+  background: var(--color-background);
+  color: var(--color-ink);
+}
+
+.lightbox {
+  width: min(56rem, calc(100vw - 2rem));
+  height: min(85dvh, 50rem);
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-2xl);
+  background: white;
+}
+
+.lightbox[open] {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.lightbox::backdrop {
+  background: rgb(11 27 58 / 0.7);
+}
+
+.lightbox-image {
+  background-color: var(--color-background);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.lightbox-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+.upload-zone {
+  display: grid;
+  gap: 0.15rem;
+  padding: 1rem;
+  border: 1px dashed color-mix(in srgb, var(--color-primary) 45%, white);
+  border-radius: var(--radius-lg);
+  background: white;
+  cursor: pointer;
+}
+
+.upload-zone[data-over],
+.upload-zone:focus-within {
+  border-style: solid;
+  background: color-mix(in srgb, var(--color-primary) 6%, white);
+}
+
+.upload-progress {
+  height: 0.4rem;
+  margin-top: 0.5rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-line);
+}
+
+.upload-progress span {
+  display: block;
+  height: 100%;
+  background: var(--gradient-signature);
+  transform-origin: left;
+  transition: transform 150ms linear;
+}
+
+.color-swatch {
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--color-line);
+}
+
+.color-swatch[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px var(--color-ink);
+}
+
+.color-custom {
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.char-save-bar {
+  position: sticky;
+  bottom: 0.75rem;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: white;
+  box-shadow: var(--shadow-soft);
+}
+
+@media (max-width: 640px) {
+  .char-grid {
+    grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .char-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .char-hero-portrait {
+    width: min(14rem, 100%);
+  }
+
+  .char-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* ---- Episode card ---- */
 
 .episode-card {
@@ -1797,7 +2169,8 @@ h4 {
    even invisible, they widen the page past the phone's viewport. */
 @media (hover: none) {
   .hero-glow,
-  .chip-tooltip {
+  .chip-tooltip,
+  .char-card::after {
     display: none;
   }
 }

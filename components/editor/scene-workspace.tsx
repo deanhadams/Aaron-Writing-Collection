@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LocationChips } from "@/components/library/location-chips";
 import { ScriptBeat } from "@/components/script/script-beat";
+import { castLookups } from "@/lib/characters/lookup";
 import { fetchScene, sendScene } from "@/lib/editor/api";
 import { createSaveQueue, type SaveQueue } from "@/lib/editor/save-queue";
 import { createEditorStore, type EditorStore } from "@/lib/editor/store";
@@ -39,10 +40,12 @@ function ReadView({
   store,
   kind,
   characterColors,
+  characterLinks,
 }: {
   store: EditorStore;
   kind: SceneKind;
   characterColors: Map<string, string | null>;
+  characterLinks: Map<string, string>;
 }) {
   const doc = useDoc(store);
 
@@ -58,7 +61,9 @@ function ReadView({
       {doc.beats.length === 0 ? (
         <p className="text-center text-muted">This scene is empty.</p>
       ) : (
-        doc.beats.map((beat) => <ScriptBeat key={beat.id} beat={beat} characterColors={characterColors} />)
+        doc.beats.map((beat) => (
+          <ScriptBeat key={beat.id} beat={beat} characterColors={characterColors} characterLinks={characterLinks} />
+        ))
       )}
     </>
   );
@@ -86,10 +91,7 @@ export function SceneWorkspace({
   const [{ store, queue }] = useState(() => createSession(sceneId, fields, version));
   const [isEditing, setEditing] = useState(false);
   const [isHistoryOpen, setHistoryOpen] = useState(false);
-  const characterColors = useMemo(
-    () => new Map(cast.map(({ name, color }) => [name.toUpperCase(), color])),
-    [cast],
-  );
+  const { colors: characterColors, links: characterLinks } = useMemo(() => castLookups(cast), [cast]);
 
   useLeaveGuard(queue);
 
@@ -158,7 +160,7 @@ export function SceneWorkspace({
         {isEditing ? (
           <SceneEditor store={store} kind={kind} cast={cast} />
         ) : (
-          <ReadView store={store} kind={kind} characterColors={characterColors} />
+          <ReadView store={store} kind={kind} characterColors={characterColors} characterLinks={characterLinks} />
         )}
       </article>
 

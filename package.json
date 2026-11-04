@@ -13,7 +13,8 @@
     "test": "vitest run",
     "db:seed": "tsx --env-file-if-exists=.env.local scripts/seed-users.ts",
     "db:seed:sample": "tsx --env-file-if-exists=.env.local scripts/seed-sample.ts",
-    "import:season": "tsx --env-file-if-exists=.env.local scripts/import-season.ts"
+    "import:season": "tsx --env-file-if-exists=.env.local scripts/import-season.ts",
+    "portraits:link": "tsx --env-file-if-exists=.env.local scripts/portraits-link.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

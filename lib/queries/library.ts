@@ -264,7 +264,13 @@ export async function getScene(sceneId: string) {
       .where(eq(scenes.episodeId, scene.episodeId))
       .orderBy(asc(scenes.position)),
     db
-      .select({ name: characters.name, fullName: characters.fullName, color: characters.color })
+      .select({
+        name: characters.name,
+        fullName: characters.fullName,
+        color: characters.color,
+        slug: characters.slug,
+        aliases: characters.aliases,
+      })
       .from(characters)
       .where(eq(characters.seriesId, scene.seriesId))
       .orderBy(asc(characters.name)),

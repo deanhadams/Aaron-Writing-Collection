@@ -1,9 +1,10 @@
 "use client";
 
 import { createContext, useContext, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
+import type { CastMember } from "@/lib/characters/lookup";
 import type { EditorStore, HeaderField } from "@/lib/editor/store";
 
-export type CastMember = { name: string; fullName: string | null; color: string | null };
+export type { CastMember };
 
 export type Toast = { message: string; onUndo?: () => void };
 
@@ -35,7 +36,9 @@ export function EditorProvider({
     () => ({
       store,
       cast,
-      castByName: new Map(cast.map((member) => [member.name.toUpperCase(), member])),
+      castByName: new Map(
+        cast.flatMap((member) => [member.name.toUpperCase(), ...member.aliases].map((key) => [key, member] as const)),
+      ),
       fields,
       showToast,
     }),

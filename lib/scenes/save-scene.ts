@@ -69,15 +69,20 @@ async function rebuildSceneCharacters(
   beats: Beat[],
 ) {
   const cast = await tx
-    .select({ id: characters.id, name: characters.name })
+    .select({ id: characters.id, name: characters.name, aliases: characters.aliases })
     .from(characters)
     .where(eq(characters.seriesId, seriesId));
-  const ids = new Map(cast.map(({ id, name }) => [name.toUpperCase(), id]));
+  const ids = new Map(
+    cast.flatMap(({ id, name, aliases }) => [name.toUpperCase(), ...aliases].map((key) => [key, id] as const)),
+  );
 
-  const links = [...speakerLineCounts(beats)].flatMap(([name, lineCount]) => {
+  // A name and its alias in one scene are one character, so their lines add up.
+  const lineCounts = new Map<string, number>();
+  for (const [name, count] of speakerLineCounts(beats)) {
     const characterId = ids.get(name);
-    return characterId ? [{ sceneId, characterId, lineCount }] : [];
-  });
+    if (characterId) lineCounts.set(characterId, (lineCounts.get(characterId) ?? 0) + count);
+  }
+  const links = [...lineCounts].map(([characterId, lineCount]) => ({ sceneId, characterId, lineCount }));
 
   await tx.delete(sceneCharacters).where(eq(sceneCharacters.sceneId, sceneId));
   if (links.length > 0) await tx.insert(sceneCharacters).values(links);

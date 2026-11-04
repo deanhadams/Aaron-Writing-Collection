@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { useModal } from "@/components/ui/use-modal";
 import { ScriptBeat } from "@/components/script/script-beat";
 import { fetchRevisions, restoreVersion, type Revision } from "@/lib/editor/api";
 import type { SaveQueue } from "@/lib/editor/save-queue";
@@ -57,7 +58,7 @@ function RevisionPreview({
 }
 
 export function HistoryDrawer({ sceneId, store, queue, characterColors, onClose }: Props) {
-  const dialog = useRef<HTMLDialogElement>(null);
+  const dialog = useModal();
   const [revisions, setRevisions] = useState<Revision[] | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [isRestoring, setRestoring] = useState(false);
@@ -65,7 +66,6 @@ export function HistoryDrawer({ sceneId, store, queue, characterColors, onClose 
   const [now] = useState(() => new Date());
 
   useEffect(() => {
-    dialog.current?.showModal();
     fetchRevisions(sceneId)
       .then(setRevisions)
       .catch(() => setError("Could not load the history."));

@@ -12,6 +12,11 @@ const NAV_ITEMS = [
     isActive: (path: string) =>
       path === "/" || /^\/(seasons|episodes|scenes)\//.test(path),
   },
+  {
+    href: "/characters",
+    label: "Characters",
+    isActive: (path: string) => path === "/characters" || path.startsWith("/characters/"),
+  },
 ];
 
 function NavList({ pathname }: { pathname?: string }) {
@@ -57,7 +62,7 @@ function ActiveNav() {
   if (pathname === LOGIN_PATH) return null;
 
   return (
-    <nav ref={navRef} aria-label="Main" className="relative hidden h-full gap-6 sm:flex">
+    <nav ref={navRef} aria-label="Main" className="relative flex h-full gap-3 sm:gap-6">
       <NavList pathname={pathname} />
       <span ref={indicatorRef} aria-hidden className="nav-indicator" />
     </nav>
@@ -68,7 +73,7 @@ export function NavLinks() {
   return (
     <Suspense
       fallback={
-        <nav aria-label="Main" className="hidden h-full gap-6 sm:flex">
+        <nav aria-label="Main" className="flex h-full gap-3 sm:gap-6">
           <NavList />
         </nav>
       }

@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -168,10 +169,36 @@ export const characters = pgTable(
     appearance: text("appearance"),
     personality: text("personality"),
     backstory: text("backstory"),
+    powers: text("powers"),
+    notes: text("notes"),
     color: text("color"),
     portraitKey: text("portrait_key"),
+    slug: text("slug").notNull().unique(),
+    // Other names scripts use for this character, in capitals.
+    aliases: text("aliases").array().notNull().default(sql`'{}'::text[]`),
+    version: integer("version").default(1),
+    updatedBy: uuid("updated_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
   (t) => [unique().on(t.seriesId, t.name)],
+);
+
+export const characterRelationships = pgTable(
+  "character_relationships",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    characterId: uuid("character_id")
+      .notNull()
+      .references(() => characters.id, { onDelete: "cascade" }),
+    relatedId: uuid("related_id")
+      .notNull()
+      .references(() => characters.id, { onDelete: "cascade" }),
+    note: text("note"),
+    position: integer("position").notNull().default(0),
+  },
+  (t) => [index().on(t.characterId, t.position)],
 );
 
 export const characterImages = pgTable(

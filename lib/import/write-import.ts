@@ -9,6 +9,7 @@ import {
   seasons,
   series,
 } from "@/lib/db/schema";
+import { slugify } from "@/lib/characters/slug";
 import { speakerLineCounts } from "@/lib/script/scene-summary";
 import type { SeedCharacter } from "./characters";
 import type { ParsedEpisode, ParsedScript } from "./parse-script";
@@ -72,6 +73,7 @@ async function syncCharacters(tx: Transaction, seriesId: string, cast: SeedChara
         seriesId,
         name,
         fullName,
+        slug: slugify(fullName ?? name),
         color,
         portraitKey,
       })),

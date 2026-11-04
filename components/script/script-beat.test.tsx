@@ -28,6 +28,18 @@ describe("ScriptBeat speakers", () => {
     expect(colorOf("DESRUC")).toBe("#0F766E");
   });
 
+  it("links each name that has a card", () => {
+    render(
+      <ScriptBeat
+        beat={{ id: "a", type: "dialogue", character: "REVOC & ZED", text: "Hi" }}
+        characterColors={colors}
+        characterLinks={new Map([["REVOC", "revoc-eriflleh"]])}
+      />,
+    );
+    expect(screen.getByRole("link", { name: "REVOC" }).getAttribute("href")).toBe("/characters/revoc-eriflleh");
+    expect(screen.queryByRole("link", { name: "ZED" })).toBeNull();
+  });
+
   it("keeps the separator as written", () => {
     const { container } = show({ type: "dialogue", character: "REVOC, DESRUC / KRAD" });
     expect(container.textContent).toContain("REVOC, DESRUC / KRAD");

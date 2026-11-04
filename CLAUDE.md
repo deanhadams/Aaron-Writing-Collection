@@ -39,7 +39,9 @@ scene_revisions(id, scene_id, beats jsonb, title, timecode, location, sealed,
          -- autosaves share a row per person per 5 minutes; sealed rows never merge
 scene_presence(scene_id, user_id, last_seen)        -- editor heartbeat
 characters(id, series_id, name, full_name, role, gift, appearance,
-           personality, backstory, color, portrait_key)
+           personality, backstory, powers, notes, color, portrait_key,
+           slug, aliases text[], version, updated_by, updated_at)
+character_relationships(id, character_id, related_id, note, position)
 character_images(id, character_id, r2_key, caption, position)
 scene_characters(scene_id, character_id, line_count)  -- derived on save
 lore_entries(id, series_id, title, category, body)
@@ -109,6 +111,10 @@ The text and button gradients are deepened versions of the signature, because cy
 - **Motion:** `rise` (fade-up; set `--i` for stagger), `page-enter`, `skeleton` (shimmer), `--ease-soft`.
 
 Fonts: **Outfit** (headings), **Inter** (body), **Courier Prime** (script text only).
+
+### Characters
+
+`--char` is a character's exact color, for decoration; `--char-text` (`readableColor`) is the same hue passing AA on white. `characterStyle(color)` sets both. Always show portraits through `Portrait`, which lays the image over the initial as a background, so a missing file never shows a broken image. `beat.character` matches a card by `name` or `aliases`, so use `castLookups`, and any new rebuild of `scene_characters` must include aliases.
 
 ### Scene editor
 

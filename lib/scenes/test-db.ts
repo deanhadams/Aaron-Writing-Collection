@@ -42,7 +42,7 @@ export async function seedScene(db: Awaited<ReturnType<typeof createTestDb>>, be
 
   const cast = await db
     .insert(characters)
-    .values(["REVOC", "DESRUC"].map((name) => ({ seriesId, name })))
+    .values(["REVOC", "DESRUC"].map((name) => ({ seriesId, name, slug: name.toLowerCase() })))
     .returning();
 
   return { dean, kim, scene, cast };

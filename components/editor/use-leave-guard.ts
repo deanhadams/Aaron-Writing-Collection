@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import type { SaveQueue } from "@/lib/editor/save-queue";
-
 const MESSAGE = "This scene has changes that have not been saved yet. Leave anyway?";
 
 /** Warns on closing the tab, and on in-app links, which skip beforeunload. */
-export function useLeaveGuard(queue: SaveQueue) {
+export function useLeaveGuard(queue: { isDirty: () => boolean }) {
   useEffect(() => {
     const handleUnload = (event: BeforeUnloadEvent) => {
       if (queue.isDirty()) event.preventDefault();

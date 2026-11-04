@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { useModal } from "@/components/ui/use-modal";
 import { fetchScene } from "@/lib/editor/api";
 import type { SaveQueue } from "@/lib/editor/save-queue";
 import type { EditorStore } from "@/lib/editor/store";
@@ -15,14 +16,10 @@ export function ConflictDialog({
   store: EditorStore;
   queue: SaveQueue;
 }) {
-  const dialog = useRef<HTMLDialogElement>(null);
+  const dialog = useModal();
   const [copyState, setCopyState] = useState<"idle" | "copied" | "manual">("idle");
   const [loadFailed, setLoadFailed] = useState(false);
   const plainText = beatsToPlainText(store.getDoc().beats);
-
-  useEffect(() => {
-    dialog.current?.showModal();
-  }, []);
 
   const copy = async () => {
     try {
