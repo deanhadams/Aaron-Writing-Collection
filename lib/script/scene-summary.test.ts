@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import type { Beat, BeatType } from "@/lib/db/schema";
 import {
   formatTimecode,
-  parseLocation,
   speakerLineCounts,
   summarizeBeats,
 } from "./scene-summary";
@@ -56,35 +55,6 @@ describe("summarizeBeats", () => {
 
   it("returns nothing for an empty scene", () => {
     expect(summarizeBeats([])).toEqual({ lineCount: 0, preview: null });
-  });
-});
-
-describe("parseLocation", () => {
-  it("splits the place from the time of day", () => {
-    expect(parseLocation("HARBOUR WALL - NIGHT")).toEqual({
-      place: "HARBOUR WALL",
-      timeOfDay: { label: "NIGHT", period: "night" },
-    });
-    expect(parseLocation("City Streets – day").timeOfDay).toEqual({
-      label: "DAY",
-      period: "day",
-    });
-  });
-
-  it("does not read a time of day out of a place name", () => {
-    expect(parseLocation("NIGHT MARKET").timeOfDay).toBeNull();
-    expect(parseLocation("DAY CARE").place).toBe("DAY CARE");
-  });
-
-  it("keeps the whole text when the ending is not a time", () => {
-    expect(parseLocation("ROOFTOP - CONTINUOUS")).toEqual({
-      place: "ROOFTOP - CONTINUOUS",
-      timeOfDay: null,
-    });
-  });
-
-  it("handles a missing location", () => {
-    expect(parseLocation(null)).toEqual({ place: null, timeOfDay: null });
   });
 });
 

@@ -27,29 +27,6 @@ export function summarizeBeats(beats: Beat[]) {
   };
 }
 
-const DAY_WORDS = ["DAY", "DAWN", "MORNING", "NOON", "AFTERNOON", "SUNRISE"];
-const NIGHT_WORDS = ["NIGHT", "MIDNIGHT", "DUSK", "EVENING", "SUNSET", "TWILIGHT"];
-
-export type TimeOfDay = { label: string; period: "day" | "night" };
-
-// Splits "LANTERN STREET - DUSK". The word must follow a dash, so a place like
-// "DAY CARE" or "NIGHT MARKET" is never mistaken for a time of day.
-export function parseLocation(location: string | null): {
-  place: string | null;
-  timeOfDay: TimeOfDay | null;
-} {
-  const match = location?.match(/^(.*\S)\s+[-–—]\s+(.+?)\s*$/);
-  const label = match?.[2].toUpperCase() ?? "";
-
-  if (DAY_WORDS.includes(label)) {
-    return { place: match![1], timeOfDay: { label, period: "day" } };
-  }
-  if (NIGHT_WORDS.includes(label)) {
-    return { place: match![1], timeOfDay: { label, period: "night" } };
-  }
-  return { place: location?.trim() || null, timeOfDay: null };
-}
-
 export function formatTimecode(timecode: string) {
   return timecode.replace(/\s*-\s*/, " – ");
 }

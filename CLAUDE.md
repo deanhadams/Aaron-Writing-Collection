@@ -91,7 +91,8 @@ The text and button gradients are deepened versions of the signature, because cy
 
 - **Surfaces:** `glass` (frosted card with gradient hairline), `glass-link` (adds hover lift and glow), `script-page` (the white script sheet).
 - **Type:** `text-gradient`, `eyebrow` (small uppercase tracked label), `numeral-outline` (big outlined number; on dark art set `--numeral`, `--numeral-fill: black` and `--numeral-blend: screen`).
-- **Controls:** `btn-primary`, `btn-ghost`, `field`, `chip`.
+- **Controls:** `btn-primary`, `btn-ghost`, `field`.
+- **Location:** always use `LocationChips`, which runs `parseLocation`. `place-chip` takes its color from the nearest `data-kind`; `time-chip` takes `data-tone` (`day`, `morning`, `evening`, `night`).
 - **Shadows:** `shadow-soft`, `shadow-glow`, `shadow-page`.
 - **Motion:** `rise` (fade-up; set `--i` for stagger), `page-enter`, `skeleton` (shimmer), `--ease-soft`.
 

@@ -267,23 +267,6 @@ h4 {
 
 /* ---- Small components ---- */
 
-@utility chip {
-  display: inline-block;
-  max-width: 100%;
-  overflow: hidden;
-  padding: 0.2rem 0.6rem;
-  border: 1px solid var(--color-line);
-  border-radius: 999px;
-  background: rgb(255 255 255 / 0.75);
-  color: var(--color-muted);
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
 @utility btn-primary {
   position: relative;
   display: inline-flex;
@@ -365,6 +348,153 @@ h4 {
 @keyframes progress-grow {
   from {
     transform: scaleX(0);
+  }
+}
+
+/* ---- Location chips ---- */
+
+.place-chip,
+.time-chip {
+  position: relative;
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Tints are mixed with white so text stays AA over the moving mesh. */
+.place-chip {
+  padding: 0.3rem 0.8rem 0.3rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--kind) 45%, white);
+  background: linear-gradient(
+    115deg,
+    color-mix(in srgb, var(--kind) 16%, white),
+    color-mix(in srgb, var(--kind) 5%, white)
+  );
+  color: var(--kind-text);
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* The hover glow fades a pseudo-element, so only opacity animates. */
+.place-chip::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--kind) 55%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms var(--ease-soft);
+}
+
+.time-chip {
+  padding: 0.3rem 0.8rem 0.3rem 0.6rem;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.time-chip[data-tone="day"] {
+  background: linear-gradient(115deg, #ffe680, #bfe3ff);
+}
+
+.time-chip[data-tone="day"] svg {
+  color: #a15c00;
+}
+
+.time-chip[data-tone="morning"] {
+  background: linear-gradient(115deg, #ffd2b3, #bde6ff);
+}
+
+.time-chip[data-tone="morning"] svg {
+  color: #b5410f;
+}
+
+.time-chip[data-tone="evening"] {
+  background: linear-gradient(115deg, #5b3bd6, #c2267f);
+  color: white;
+}
+
+.time-chip[data-tone="night"] {
+  background: linear-gradient(115deg, #1f1b6e, #5b3bd6);
+  box-shadow: 0 0 12px rgb(91 59 214 / 0.5);
+  color: white;
+  padding-right: 1.5rem;
+}
+
+.chip-stars span {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: white;
+  opacity: 0.8;
+  animation: twinkle 2.4s ease-in-out infinite;
+}
+
+.chip-stars span:nth-child(1) {
+  top: 28%;
+  right: 0.95rem;
+}
+
+.chip-stars span:nth-child(2) {
+  top: 62%;
+  right: 0.6rem;
+  animation-delay: -0.8s;
+}
+
+.chip-stars span:nth-child(3) {
+  top: 40%;
+  right: 0.35rem;
+  animation-delay: -1.6s;
+}
+
+@keyframes twinkle {
+  50% {
+    opacity: 0.15;
+  }
+}
+
+.chip-tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 5;
+  width: max-content;
+  max-width: 18rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: var(--radius-md);
+  background: var(--color-ink);
+  color: white;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: normal;
+  white-space: normal;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(3px);
+  transition:
+    opacity 150ms var(--ease-soft),
+    transform 150ms var(--ease-soft);
+}
+
+@media (hover: hover) {
+  .place-chip:hover::before {
+    opacity: 1;
+  }
+
+  .place-chip:hover .chip-tooltip,
+  .time-chip:hover .chip-tooltip {
+    opacity: 1;
+    transform: none;
   }
 }
 

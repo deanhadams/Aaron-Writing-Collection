@@ -88,8 +88,8 @@ const EPISODES = [
       {
         kind: "post_credit" as const,
         title: "The Parcel Ticks",
-        location: "LANTERN STREET - NIGHT",
-        beats: [beat("visual", "The parcel, alone on the kerb, begins to tick.")],
+        location: "INT. PARCEL DEPOT - DAY",
+        beats: [beat("visual", "The parcel, alone on a shelf, begins to tick.")],
       },
     ],
   },

@@ -26,9 +26,29 @@ export const SunIcon = (props: IconProps) => (
   </Icon>
 );
 
-export const MoonIcon = (props: IconProps) => (
+export const MoonStarsIcon = (props: IconProps) => (
   <Icon {...props}>
-    <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z" />
+    <path d="M19 14.5A7.5 7.5 0 1 1 9.5 5a6 6 0 0 0 9.5 9.5Z" />
+    <path d="M17 3v4M15 5h4M21 9v2M20 10h2" />
+  </Icon>
+);
+
+export const SunriseIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M12 2v6M9 5l3-3 3 3M2 18h2M20 18h2M4.9 11.9l1.4 1.4M17.7 13.3l1.4-1.4M2 22h20M16 18a4 4 0 0 0-8 0" />
+  </Icon>
+);
+
+export const SunsetIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M12 8V2M9 5l3 3 3-3M2 18h2M20 18h2M4.9 11.9l1.4 1.4M17.7 13.3l1.4-1.4M2 22h20M16 18a4 4 0 0 0-8 0" />
+  </Icon>
+);
+
+export const MapPinIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M20 10c0 5-5.5 9.8-7.4 11.3a1 1 0 0 1-1.2 0C9.5 19.8 4 15 4 10a8 8 0 0 1 16 0Z" />
+    <circle cx="12" cy="10" r="3" />
   </Icon>
 );
 

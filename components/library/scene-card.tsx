@@ -2,12 +2,9 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { SCENE_KIND_LABELS, plural, sceneTitle } from "@/lib/format";
 import type { getEpisode } from "@/lib/queries/library";
-import {
-  formatTimecode,
-  parseLocation,
-  summarizeBeats,
-} from "@/lib/script/scene-summary";
-import { ArrowIcon, KIND_ICONS, MoonIcon, SunIcon } from "./scene-icons";
+import { formatTimecode, summarizeBeats } from "@/lib/script/scene-summary";
+import { LocationChips } from "./location-chips";
+import { ArrowIcon, KIND_ICONS } from "./scene-icons";
 import { SpeakerAvatars } from "./speaker-avatars";
 
 export type SceneCardData = NonNullable<
@@ -38,7 +35,6 @@ export function SceneCard({
   index: number;
 }) {
   const { lineCount, preview } = summarizeBeats(scene.beats);
-  const { place, timeOfDay } = parseLocation(scene.location);
   const stats = [
     lineCount > 0 && plural(lineCount, "line"),
     scene.timecode && formatTimecode(scene.timecode),
@@ -88,21 +84,7 @@ export function SceneCard({
             )}
           </div>
 
-          {(place || timeOfDay) && (
-            <p className="mt-3 flex flex-wrap gap-2">
-              {place && <span className="chip">{place}</span>}
-              {timeOfDay && (
-                <span className="chip inline-flex items-center gap-1">
-                  {timeOfDay.period === "day" ? (
-                    <SunIcon className="size-3.5" />
-                  ) : (
-                    <MoonIcon className="size-3.5" />
-                  )}
-                  {timeOfDay.label}
-                </span>
-              )}
-            </p>
-          )}
+          <LocationChips location={scene.location} className="mt-3" />
         </div>
 
         <ArrowIcon className="scene-card-arrow" />
