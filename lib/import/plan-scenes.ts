@@ -1,17 +1,21 @@
 import type { Beat } from "@/lib/db/schema";
+import { sceneImportKey } from "./import-key";
 import type { ParsedScene } from "./parse-script";
 
 export type ExistingScene = Omit<ParsedScene, "beats"> & {
   id: string;
   beats: Beat[];
   version: number;
+  importKey: string | null;
+  deletedAt: Date | null;
 };
 
 export type SceneAction =
-  | { action: "insert"; scene: ParsedScene }
+  | { action: "insert"; scene: ParsedScene; importKey: string }
   | { action: "update"; scene: ParsedScene; existing: ExistingScene; version: number }
   | { action: "unchanged"; existing: ExistingScene }
-  | { action: "protected"; scene: ParsedScene; existing: ExistingScene };
+  | { action: "protected"; scene: ParsedScene; existing: ExistingScene }
+  | { action: "deleted"; existing: ExistingScene };
 
 // Beat ids differ on every parse, and jsonb reorders keys, so compare by field.
 const beatContent = ({ type, character, parenthetical, text }: Beat) => [
@@ -24,17 +28,25 @@ const beatContent = ({ type, character, parenthetical, text }: Beat) => [
 const sceneContent = ({ kind, title, timecode, location, beats }: Omit<ParsedScene, "position">) =>
   JSON.stringify([kind, title, timecode, location, beats.map(beatContent)]);
 
-/** Matches by position within an episode. Scenes edited on the site need force. */
+/**
+ * Matches by import key across the season, so a scene dragged or moved on the
+ * site is still found. Its place is the site's: nothing here writes a position
+ * or an episode to a scene that already exists. Scenes edited on the site need
+ * force, and a scene someone deleted stays deleted.
+ */
 export function planScenes(
   existing: ExistingScene[],
   parsed: ParsedScene[],
+  episodeNumber: number,
   force: boolean,
 ): SceneAction[] {
-  const byPosition = new Map(existing.map((scene) => [scene.position, scene]));
+  const byKey = new Map(existing.flatMap((scene) => (scene.importKey ? [[scene.importKey, scene] as const] : [])));
 
   return parsed.map((scene) => {
-    const match = byPosition.get(scene.position);
-    if (!match) return { action: "insert", scene };
+    const importKey = sceneImportKey(episodeNumber, scene.position);
+    const match = byKey.get(importKey);
+    if (!match) return { action: "insert", scene, importKey };
+    if (match.deletedAt) return { action: "deleted", existing: match };
     if (sceneContent(match) === sceneContent(scene)) return { action: "unchanged", existing: match };
 
     const isEdited = match.version > 1;
@@ -45,8 +57,7 @@ export function planScenes(
   });
 }
 
-/** Scenes in the database past the end of the document. They are never deleted. */
-export function extraScenes(existing: ExistingScene[], parsed: ParsedScene[]) {
-  const positions = new Set(parsed.map(({ position }) => position));
-  return existing.filter(({ position }) => !positions.has(position));
+/** Live scenes from an earlier import that the document no longer has. They are never deleted. */
+export function extraScenes(existing: ExistingScene[], documentKeys: Set<string>) {
+  return existing.filter(({ importKey, deletedAt }) => importKey && !deletedAt && !documentKeys.has(importKey));
 }

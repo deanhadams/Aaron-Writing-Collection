@@ -15,7 +15,8 @@ export async function sendScene(sceneId: string, doc: SceneFields, version: numb
     jsonRequest("PUT", { ...doc, beats: doc.beats.map(normalizeBeat), version }),
   );
 
-  if (response.status === 409) return { kind: "conflict" };
+  // Gone means someone deleted the scene, so stop saving and say so.
+  if (response.status === 409 || response.status === 404) return { kind: "conflict" };
   if (response.status === 401) return { kind: "unauthorized" };
   if (!response.ok) return { kind: "failed" };
 
@@ -25,8 +26,9 @@ export async function sendScene(sceneId: string, doc: SceneFields, version: numb
 
 export type LatestScene = SceneFields & { version: number };
 
-export async function fetchScene(sceneId: string): Promise<LatestScene | null> {
+export async function fetchScene(sceneId: string): Promise<LatestScene | "deleted" | null> {
   const response = await fetch(`/api/scenes/${sceneId}`, { cache: "no-store" });
+  if (response.status === 404) return "deleted";
   return response.ok ? ((await response.json()) as LatestScene) : null;
 }
 

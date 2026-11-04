@@ -98,7 +98,7 @@ export function SceneWorkspace({
   // The page may be a cached or hidden copy, so check before trusting its version.
   const catchUp = useCallback(async () => {
     const latest = await fetchScene(sceneId).catch(() => null);
-    if (!latest || queue.isDirty() || latest.version <= queue.getVersion()) return;
+    if (!latest || latest === "deleted" || queue.isDirty() || latest.version <= queue.getVersion()) return;
 
     const { version: newest, title, timecode, location, beats } = latest;
     store.replace({ title, timecode, location, beats });

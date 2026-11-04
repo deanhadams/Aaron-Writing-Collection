@@ -10,6 +10,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -68,6 +69,9 @@ export const seasons = pgTable(
       .references(() => series.id, { onDelete: "cascade" }),
     number: integer("number").notNull(),
     title: text("title"),
+    summary: text("summary"),
+    // Moves on with the settings and with the list of episodes.
+    version: integer("version").notNull().default(1),
   },
   (t) => [unique().on(t.seriesId, t.number)],
 );
@@ -85,8 +89,24 @@ export const episodes = pgTable(
     summary: text("summary"),
     openingTheme: text("opening_theme"),
     outroTheme: text("outro_theme"),
+    // Title, status, summary and themes.
+    version: integer("version").notNull().default(1),
+    // The list of scenes, kept apart so a reorder is never an edit to the episode.
+    scenesVersion: integer("scenes_version").notNull().default(1),
+    // Where the Word file puts it. Empty on episodes made on the site.
+    importKey: text("import_key"),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    deletedBy: uuid("deleted_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
   },
-  (t) => [unique().on(t.seasonId, t.number)],
+  (t) => [
+    // Partial: a deleted episode's number is free for a new one.
+    uniqueIndex("episodes_live_number_unique")
+      .on(t.seasonId, t.number)
+      .where(sql`deleted_at is null`),
+    unique().on(t.seasonId, t.importKey),
+  ],
 );
 
 export const scenes = pgTable(
@@ -109,9 +129,23 @@ export const scenes = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    // Where the Word file puts it. Empty on scenes made on the site. A scene
+    // has no season of its own, so import_season_id scopes the key's uniqueness
+    // and stays put when the scene moves.
+    importKey: text("import_key"),
+    importSeasonId: uuid("import_season_id").references(() => seasons.id, {
+      onDelete: "cascade",
+    }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    deletedBy: uuid("deleted_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
   },
   // Not unique: drag-reordering rewrites positions row by row.
-  (t) => [index().on(t.episodeId, t.position)],
+  (t) => [
+    index().on(t.episodeId, t.position),
+    unique().on(t.importSeasonId, t.importKey),
+  ],
 );
 
 export const sceneRevisions = pgTable(
@@ -215,7 +249,7 @@ export const characterImages = pgTable(
   (t) => [index().on(t.characterId, t.position)],
 );
 
-// Derived: rebuilt from a scene's beats every time the scene is saved.
+// Derived: rebuilt from a scene's beats on save. Deleted scenes have no rows.
 export const sceneCharacters = pgTable(
   "scene_characters",
   {

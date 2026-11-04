@@ -1,8 +1,8 @@
 import Link from "next/link";
-import type { CSSProperties } from "react";
+import type { ReactNode } from "react";
 import { SCENE_KIND_LABELS, plural, sceneTitle } from "@/lib/format";
 import type { getEpisode } from "@/lib/queries/library";
-import { formatTimecode, summarizeBeats } from "@/lib/script/scene-summary";
+import { formatTimecode } from "@/lib/script/scene-summary";
 import { LocationChips } from "./location-chips";
 import { ArrowIcon, KIND_ICONS } from "./scene-icons";
 import { SpeakerAvatars } from "./speaker-avatars";
@@ -28,13 +28,13 @@ function Marker({
 export function SceneCard({
   scene,
   number,
-  index,
+  tools,
 }: {
   scene: SceneCardData;
   number: number | null;
-  index: number;
+  tools: ReactNode;
 }) {
-  const { lineCount, preview } = summarizeBeats(scene.beats);
+  const { lineCount, preview } = scene;
   const stats = [
     lineCount > 0 && plural(lineCount, "line"),
     scene.timecode && formatTimecode(scene.timecode),
@@ -42,16 +42,12 @@ export function SceneCard({
   const hasAside = scene.speakers.length > 0 || stats.length > 0;
 
   return (
-    <li
-      data-kind={scene.kind}
-      className="rise relative"
-      style={{ "--i": index } as CSSProperties}
-    >
+    <>
       <span aria-hidden className="timeline-node">
         <Marker kind={scene.kind} number={number} className="size-4" />
       </span>
 
-      <Link href={`/scenes/${scene.id}`} className="glass glass-link scene-card">
+      <article className="glass glass-link scene-card">
         <span aria-hidden className="scene-card-art">
           <span className="scene-card-watermark">
             <Marker kind={scene.kind} number={number} className="size-32" />
@@ -67,7 +63,10 @@ export function SceneCard({
                 </p>
               )}
               <h2 className="mt-0.5 text-xl font-semibold leading-snug sm:text-2xl">
-                {sceneTitle(scene)}
+                {/* Its ::after covers the card, so the whole card is this one link. */}
+                <Link href={`/scenes/${scene.id}`} className="card-link">
+                  {sceneTitle(scene)}
+                </Link>
               </h2>
               {preview && <p className="script-preview">{preview}</p>}
             </div>
@@ -85,10 +84,11 @@ export function SceneCard({
           </div>
 
           <LocationChips location={scene.location} className="mt-3" />
+          <div className="card-tools">{tools}</div>
         </div>
 
         <ArrowIcon className="scene-card-arrow" />
-      </Link>
-    </li>
+      </article>
+    </>
   );
 }

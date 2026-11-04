@@ -1,21 +1,21 @@
 import { and, desc, eq } from "drizzle-orm";
+import { liveScene } from "@/lib/db/live";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import {
-  characters,
   episodes,
-  sceneCharacters,
   sceneRevisions,
   scenes,
   seasons,
   users,
   type Beat,
 } from "@/lib/db/schema";
-import { speakerLineCounts } from "@/lib/script/scene-summary";
+import type { SceneKind } from "@/lib/format";
+import { rebuildSceneLinks } from "./scene-links";
 import type { SceneFields } from "./validate";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Database = PgDatabase<PgQueryResultHKT, any, any>;
-type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
+export type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 export type SaveResult =
   | { status: "saved"; version: number }
@@ -43,6 +43,7 @@ const sameContent = (a: SceneFields, b: SceneFields) =>
 async function lockScene(tx: Transaction, sceneId: string) {
   const [scene] = await tx
     .select({
+      kind: scenes.kind,
       title: scenes.title,
       timecode: scenes.timecode,
       location: scenes.location,
@@ -55,37 +56,10 @@ async function lockScene(tx: Transaction, sceneId: string) {
     .from(scenes)
     .innerJoin(episodes, eq(scenes.episodeId, episodes.id))
     .innerJoin(seasons, eq(episodes.seasonId, seasons.id))
-    .where(eq(scenes.id, sceneId))
+    .where(and(eq(scenes.id, sceneId), liveScene))
     .for("update", { of: scenes });
 
   return scene ?? null;
-}
-
-// Names with no character row, like INTERCOM, simply get no link.
-async function rebuildSceneCharacters(
-  tx: Transaction,
-  sceneId: string,
-  seriesId: string,
-  beats: Beat[],
-) {
-  const cast = await tx
-    .select({ id: characters.id, name: characters.name, aliases: characters.aliases })
-    .from(characters)
-    .where(eq(characters.seriesId, seriesId));
-  const ids = new Map(
-    cast.flatMap(({ id, name, aliases }) => [name.toUpperCase(), ...aliases].map((key) => [key, id] as const)),
-  );
-
-  // A name and its alias in one scene are one character, so their lines add up.
-  const lineCounts = new Map<string, number>();
-  for (const [name, count] of speakerLineCounts(beats)) {
-    const characterId = ids.get(name);
-    if (characterId) lineCounts.set(characterId, (lineCounts.get(characterId) ?? 0) + count);
-  }
-  const links = [...lineCounts].map(([characterId, lineCount]) => ({ sceneId, characterId, lineCount }));
-
-  await tx.delete(sceneCharacters).where(eq(sceneCharacters.sceneId, sceneId));
-  if (links.length > 0) await tx.insert(sceneCharacters).values(links);
 }
 
 type LockedScene = NonNullable<Awaited<ReturnType<typeof lockScene>>>;
@@ -136,7 +110,7 @@ async function writeVersion(
   tx: Transaction,
   sceneId: string,
   current: LockedScene,
-  fields: SceneFields,
+  fields: SceneFields & { kind?: SceneKind },
   userId: string,
   { seal = false } = {},
 ) {
@@ -147,7 +121,7 @@ async function writeVersion(
     .update(scenes)
     .set({ ...fields, version, updatedBy: userId, updatedAt: new Date() })
     .where(eq(scenes.id, sceneId));
-  await rebuildSceneCharacters(tx, sceneId, current.seriesId, fields.beats);
+  await rebuildSceneLinks(tx, current.seriesId, [{ id: sceneId, beats: fields.beats }]);
 
   return version;
 }
@@ -173,6 +147,27 @@ export async function saveScene(
     }
 
     return { status: "saved", version: await writeVersion(tx, sceneId, current, fields, userId) };
+  });
+}
+
+/** Rename or change kind from the episode page. An edit like any other, so it goes in history. */
+export async function updateSceneDetails(
+  db: Database,
+  input: { sceneId: string; userId: string; version: number; title: string | null; kind: SceneKind },
+): Promise<SaveResult> {
+  const { sceneId, userId, version, title, kind } = input;
+
+  return db.transaction(async (tx) => {
+    const current = await lockScene(tx, sceneId);
+    if (!current) return { status: "not_found" };
+    if (current.version !== version) return { status: "conflict", version: current.version };
+    if (current.title === title && current.kind === kind) return { status: "saved", version };
+
+    const { timecode, location, beats } = current;
+    return {
+      status: "saved",
+      version: await writeVersion(tx, sceneId, current, { title, kind, timecode, location, beats }, userId),
+    };
   });
 }
 
@@ -223,7 +218,8 @@ export async function getSavedScene(db: Database, sceneId: string): Promise<Save
       version: scenes.version,
     })
     .from(scenes)
-    .where(eq(scenes.id, sceneId));
+    .innerJoin(episodes, eq(scenes.episodeId, episodes.id))
+    .where(and(eq(scenes.id, sceneId), liveScene));
 
   return scene ?? null;
 }

@@ -12,6 +12,7 @@ import {
 } from "@/lib/db/schema";
 import { VOICE_LABELS } from "@/lib/import/parse-beat";
 import type { Database } from "@/lib/scenes/save-scene";
+import { liveEpisode, liveScene } from "@/lib/db/live";
 import { splitSpeakers } from "@/lib/script/scene-summary";
 import { linesPerEpisode, speakersWithoutCards, summarizeAppearances } from "./stats";
 
@@ -37,8 +38,10 @@ async function spokenNames(db: Database) {
   const beat = sql`jsonb_array_elements(${scenes.beats})`;
   const { rows } = (await db.execute(sql`
     select b->>'character' as character, count(*)::int as lines
-    from ${scenes}, ${beat} as b
-    where b->>'type' in ('dialogue', 'vo') and b->>'character' is not null
+    from ${scenes}
+    join ${episodes} on ${scenes.episodeId} = ${episodes.id}
+    cross join ${beat} as b
+    where b->>'type' in ('dialogue', 'vo') and b->>'character' is not null and ${liveScene}
     group by 1
   `)) as unknown as { rows: { character: string; lines: number }[] };
   return rows;
@@ -154,6 +157,7 @@ export async function loadCharacter(db: Database, slug: string) {
       .select({ seasonNumber: seasons.number, episodeNumber: episodes.number, title: episodes.title })
       .from(episodes)
       .innerJoin(seasons, eq(episodes.seasonId, seasons.id))
+      .where(liveEpisode)
       .orderBy(asc(seasons.number), asc(episodes.number)),
     db
       .select()

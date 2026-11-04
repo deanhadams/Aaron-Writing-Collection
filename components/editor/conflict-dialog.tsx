@@ -19,6 +19,7 @@ export function ConflictDialog({
   const dialog = useModal();
   const [copyState, setCopyState] = useState<"idle" | "copied" | "manual">("idle");
   const [loadFailed, setLoadFailed] = useState(false);
+  const [isDeleted, setDeleted] = useState(false);
   const plainText = beatsToPlainText(store.getDoc().beats);
 
   const copy = async () => {
@@ -37,6 +38,10 @@ export function ConflictDialog({
     }
 
     const latest = await fetchScene(sceneId).catch(() => null);
+    if (latest === "deleted") {
+      setDeleted(true);
+      return;
+    }
     if (!latest) {
       setLoadFailed(true);
       return;
@@ -74,6 +79,11 @@ export function ConflictDialog({
         />
       )}
       {copyState === "copied" && <p className="mt-3 text-sm font-medium text-status-done">Copied.</p>}
+      {isDeleted && (
+        <p className="mt-3 text-sm font-medium text-status-idea">
+          This scene was deleted. Copy your text, then restore the scene from Recently deleted in the season menu.
+        </p>
+      )}
       {loadFailed && (
         <p className="mt-3 text-sm font-medium text-status-idea">
           Could not reach the server. Your text is still here, so try again.

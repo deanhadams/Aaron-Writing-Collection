@@ -27,13 +27,20 @@ Series > seasons > episodes > scenes.
 ```
 users(id, email, name, password_hash)
 series(id, title, description, cover_key)
-seasons(id, series_id, number, title)
+seasons(id, series_id, number, title, summary, version)
+         -- version also guards the list of episodes
 episodes(id, season_id, number, title, status, summary,
-         opening_theme, outro_theme)                 -- status: idea | drafting | done
+         opening_theme, outro_theme, version, scenes_version,
+         import_key, deleted_at, deleted_by)
+         -- status: idea | drafting | done
+         -- version: its own fields. scenes_version: its list of scenes
+         -- number is unique among live episodes only
 scenes(id, episode_id, position, kind, title, timecode, location,
-       beats jsonb, version, updated_by, updated_at)
+       beats jsonb, version, updated_by, updated_at,
+       import_key, import_season_id, deleted_at, deleted_by)
          -- kind: prologue | scene | outro | post_credit
          -- beats: [{id, type, character?, parenthetical?, text}]
+         -- import_key: its place in the Word file, like e12:s3. Empty if made on the site
 scene_revisions(id, scene_id, beats jsonb, title, timecode, location, sealed,
                 saved_by, saved_at)
          -- autosaves share a row per person per 5 minutes; sealed rows never merge
@@ -43,7 +50,8 @@ characters(id, series_id, name, full_name, role, gift, appearance,
            slug, aliases text[], version, updated_by, updated_at)
 character_relationships(id, character_id, related_id, note, position)
 character_images(id, character_id, r2_key, caption, position)
-scene_characters(scene_id, character_id, line_count)  -- derived on save
+scene_characters(scene_id, character_id, line_count)
+         -- derived on save. Deleted scenes have no rows until restored
 lore_entries(id, series_id, title, category, body)
 ```
 
@@ -66,6 +74,7 @@ Tokens live in [app/globals.css](app/globals.css). Use the Tailwind names below 
 | `ink` | `#0B1B3A` | Text |
 | `muted` | `#475372` | Secondary text. Use this, not `ink` with opacity |
 | `line` | `#D6E4FF` | Hairlines, progress track |
+| `danger` | `#B3261E` | Destructive actions: delete buttons and menu items |
 | `status-idea` | `#5B3BD6` | Idea pill text, on 15% violet mixed with white |
 | `status-drafting` | `#0B6A85` | Drafting pill text, on 15% cyan mixed with white |
 | `status-done` | `#0B6B3C` | Done pill text, on 15% of itself mixed with white |
@@ -118,7 +127,17 @@ Fonts: **Outfit** (headings), **Inter** (body), **Courier Prime** (script text o
 
 ### Scene editor
 
-Beat rows take their color from `data-beat` (`--beat` for decoration, `--beat-text` for AA text). `lib/editor/store.ts` and `save-queue.ts` are plain objects outside React: rows subscribe to their own beat, and saves outlive a hidden route. Scene writes go through `saveScene` or `restoreRevision` in `lib/scenes/save-scene.ts`.
+Beat rows take their color from `data-beat` (`--beat` for decoration, `--beat-text` for AA text). `lib/editor/store.ts` and `save-queue.ts` are plain objects outside React: rows subscribe to their own beat, and saves outlive a hidden route. Scene writes go through `saveScene`, `restoreRevision` or `updateSceneDetails` in `lib/scenes/save-scene.ts`.
+
+### Season and episode management
+
+Pages use a board (`lib/structure/board.ts`, `useBoard`): a plain object outside React that keeps what the server confirmed apart from what is in flight, and runs requests one at a time. `useFeedback` adds toasts, the conflict message and the refresh when a hidden route comes back.
+
+- Soft delete sets `deleted_at` for 30 days. Read through `liveScene` and `liveEpisode` in `lib/db/live.ts`. A scene in a deleted episode keeps an empty `deleted_at`, so a restore brings back exactly what was live.
+- Delete, restore, reorder and move leave a scene's `version` and `updated_at` alone: they would give open editors a false conflict, and the importer would see an edit. They bump the list's version instead.
+- Rebuilds of `scene_characters` go through `rebuildSceneLinks` with live scenes only.
+- `lib/images.ts` reads a server setting, so it returns nothing in the browser. Pass finished urls to client components.
+- The importer matches on `import_key`, never on position, and never writes a position, number or episode to a row that exists.
 
 ### Motion and performance rules
 

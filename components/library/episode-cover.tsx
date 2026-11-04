@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { CheckIcon } from "./scene-icons";
 
 type Status = "idea" | "drafting" | "done";
@@ -50,10 +50,10 @@ export function StatusChip({
 
 export function EpisodeCover({
   number,
-  status,
+  children,
 }: {
   number: number;
-  status: Status;
+  children: ReactNode;
 }) {
   return (
     <div className="ep-cover">
@@ -67,7 +67,7 @@ export function EpisodeCover({
           <span className="ep-numeral-fill">{number}</span>
         </p>
       </div>
-      <StatusChip status={status} />
+      {children}
     </div>
   );
 }

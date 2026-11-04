@@ -21,6 +21,22 @@ A private web app where Aaron writes anime screenplays and keeps a character bib
 | `npm run import:season -- --dry-run` | Reports on `import/Season_1.docx` without touching the database |
 | `npm run portraits:link` | Checks R2 for each character's portrait, and links any that are missing a key |
 
+## Re-importing a season
+
+`npm run import:season` can be run again after the Word file changes. Every episode and scene from the file carries an import key, like `e12:s3`, which is its place in the file. A re-import matches on that key, so nothing on the site confuses it:
+
+| On the site | What a re-import does |
+|---|---|
+| Scenes or episodes reordered, or a scene moved to another episode | Updates each in place and keeps the site's order |
+| Scene or episode added | Leaves it alone. It has no key |
+| Scene or episode edited | Skips it and lists it as protected. `--force` overwrites it |
+| Scene or episode deleted | Leaves it deleted, even with `--force`, and lists it. After the 30 days it is gone, and a re-import adds it again |
+| Character merged or renamed | Matches the old name through the card's aliases, so no card comes back |
+
+Episode status and summary always stay as the site has them. A new episode in the file whose number is taken goes to the next free number, and the report says so.
+
+A key is a place, not an identity. If a scene is inserted in the middle of the Word file, every later scene in that episode shifts onto the next key. Unedited scenes simply update to the new text, but edited scenes are listed as protected, so read that list before using `--force`.
+
 ## Images and R2
 
 Images live in a public Cloudflare R2 bucket. The database stores only the key, and display URLs are `${R2_PUBLIC_URL}/${key}`.

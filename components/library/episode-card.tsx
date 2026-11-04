@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { formatRelative, plural } from "@/lib/format";
 import type { getSeason } from "@/lib/queries/library";
 import { coverStyle, EpisodeCover } from "./episode-cover";
@@ -35,32 +35,34 @@ function editedText(edit: Episode["stats"]["lastEdited"], now: Date) {
 
 export function EpisodeCard({
   episode,
-  index,
   now,
+  statusControl,
+  tools,
 }: {
   episode: Episode;
-  index: number;
   now: Date;
+  statusControl: ReactNode;
+  tools: ReactNode;
 }) {
   const { sceneCount, lineCount, runtimeMinutes, lastEdited } = episode.stats;
   const edited = editedText(lastEdited, now);
   const hasFooter = episode.speakers.length > 0 || edited;
 
   return (
-    <li className="rise" style={{ "--i": index } as CSSProperties}>
-      <Link
-        href={`/episodes/${episode.id}`}
-        style={coverStyle(episode.number)}
-        className="glass glass-link episode-card"
-      >
-        <EpisodeCover number={episode.number} status={episode.status} />
+    <article style={coverStyle(episode.number)} className="glass glass-link episode-card">
+        <EpisodeCover number={episode.number}>{statusControl}</EpisodeCover>
 
         <div className="flex flex-1 flex-col p-5">
-          <h2 className="ep-title">
-            {episode.title}
-            <span aria-hidden className="ep-title-underline">
-              <span>{episode.title}</span>
-            </span>
+          <h2>
+            {/* Its ::after covers the card, so the whole card is this one link. */}
+            <Link href={`/episodes/${episode.id}`} className="card-link">
+              <span className="ep-title">
+                {episode.title}
+                <span aria-hidden className="ep-title-underline">
+                  <span>{episode.title}</span>
+                </span>
+              </span>
+            </Link>
           </h2>
 
           <Blurb episode={episode} />
@@ -103,10 +105,11 @@ export function EpisodeCard({
               )}
             </div>
           )}
+
+          <div className="card-tools">{tools}</div>
         </div>
 
         <ArrowIcon className="episode-card-arrow" />
-      </Link>
-    </li>
+    </article>
   );
 }

@@ -1,10 +1,9 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { SceneTimeline } from "@/components/library/scene-timeline";
+import { EpisodeControls } from "@/components/structure/episode-controls";
+import { SceneBoard } from "@/components/structure/scene-board";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
-import { EmptyState } from "@/components/ui/empty-state";
 import { PageSkeleton } from "@/components/ui/page-skeleton";
-import { StatusBadge } from "@/components/ui/status-badge";
 import { seasonTitle } from "@/lib/format";
 import { getEpisode } from "@/lib/queries/library";
 
@@ -25,23 +24,29 @@ async function Episode({ params }: { params: Params }) {
           { label: seasonTitle(season), href: `/seasons/${episode.seasonId}` },
         ]}
       />
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <p className="eyebrow text-primary-strong">Episode {episode.number}</p>
-        <StatusBadge status={episode.status} />
+        <EpisodeControls episode={episode} />
       </div>
       <h1 className="text-gradient mt-1 w-fit text-4xl font-bold tracking-tight sm:text-5xl">
         {episode.title}
       </h1>
       {episode.summary && (
-        <p className="mt-3 max-w-2xl text-lg text-muted">{episode.summary}</p>
+        <p className="mt-3 max-w-2xl whitespace-pre-wrap text-lg text-muted">{episode.summary}</p>
+      )}
+      {(episode.openingTheme || episode.outroTheme) && (
+        <p className="mt-2 text-sm text-muted">
+          {[
+            episode.openingTheme && `Opening: ${episode.openingTheme}`,
+            episode.outroTheme && `Outro: ${episode.outroTheme}`,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
       )}
 
       <div className="mt-8">
-        {episode.scenes.length === 0 ? (
-          <EmptyState title="No scenes yet" />
-        ) : (
-          <SceneTimeline scenes={episode.scenes} />
-        )}
+        <SceneBoard episode={episode} />
       </div>
     </>
   );

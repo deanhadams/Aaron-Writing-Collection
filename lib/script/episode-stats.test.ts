@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  seasonOverview,
   seasonPhase,
   summarizeEpisode,
   summarizeSeason,
@@ -13,6 +14,26 @@ const scene = (overrides: Partial<EpisodeSceneRow> = {}): EpisodeSceneRow => ({
   updatedAt: new Date("2026-01-01"),
   editor: null,
   ...overrides,
+});
+
+describe("seasonOverview", () => {
+  const episode = (status: "idea" | "drafting" | "done", runtimeMinutes: number | null) => ({
+    status,
+    stats: { sceneCount: 2, lineCount: 10, runtimeMinutes },
+  });
+
+  it("adds up counts, scenes, lines and runtime", () => {
+    expect(seasonOverview([episode("idea", 20), episode("done", 22), episode("done", null)])).toEqual({
+      counts: { idea: 1, drafting: 0, done: 2 },
+      sceneCount: 6,
+      lineCount: 30,
+      runtimeMinutes: 42,
+    });
+  });
+
+  it("has no runtime when no episode has timecodes", () => {
+    expect(seasonOverview([episode("idea", null)]).runtimeMinutes).toBeNull();
+  });
 });
 
 describe("summarizeEpisode", () => {

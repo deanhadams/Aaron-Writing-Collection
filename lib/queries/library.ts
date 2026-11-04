@@ -1,8 +1,11 @@
 import "server-only";
-import { asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, ne, sql } from "drizzle-orm";
 import { connection } from "next/server";
 import { db } from "@/lib/db";
+import { imageUrl } from "@/lib/images";
+import { liveEpisode, liveScene } from "@/lib/db/live";
 import { summarizeEpisode, summarizeSeason } from "@/lib/script/episode-stats";
+import { summarizeBeats } from "@/lib/script/scene-summary";
 import {
   characters,
   episodes,
@@ -36,6 +39,12 @@ const sceneStatFields = {
   ) #>> '{}'`,
 };
 
+/** The bucket address is a server setting, so browsers get finished urls. */
+const withPortrait = <T extends { portraitKey: string | null }>({ portraitKey, ...speaker }: T) => ({
+  ...speaker,
+  portraitUrl: imageUrl(portraitKey),
+});
+
 // connection() keeps these reads at request time, so edits always show and
 // nothing is baked into the build.
 export async function getSeasonCards() {
@@ -63,12 +72,14 @@ export async function getSeasonCards() {
         status: episodes.status,
       })
       .from(episodes)
+      .where(liveEpisode)
       .orderBy(asc(episodes.number)),
     db
       .select({ ...sceneStatFields, seasonId: episodes.seasonId })
       .from(scenes)
       .innerJoin(episodes, eq(scenes.episodeId, episodes.id))
       .leftJoin(users, eq(scenes.updatedBy, users.id))
+      .where(liveScene)
       .orderBy(asc(episodes.number), asc(scenes.position)),
     db
       .select({
@@ -91,7 +102,7 @@ export async function getSeasonCards() {
     return {
       ...season,
       episodes: seasonEpisodes,
-      speakers: speakerRows.filter((s) => s.seasonId === season.id),
+      speakers: speakerRows.filter((s) => s.seasonId === season.id).map(withPortrait),
       stats: summarizeSeason(
         seasonEpisodes,
         sceneRows.filter((scene) => scene.seasonId === season.id),
@@ -109,6 +120,8 @@ export async function getSeason(seasonId: string) {
       id: seasons.id,
       number: seasons.number,
       title: seasons.title,
+      summary: seasons.summary,
+      version: seasons.version,
       seriesTitle: series.title,
     })
     .from(seasons)
@@ -127,16 +140,19 @@ export async function getSeason(seasonId: string) {
         title: episodes.title,
         status: episodes.status,
         summary: episodes.summary,
+        openingTheme: episodes.openingTheme,
+        outroTheme: episodes.outroTheme,
+        version: episodes.version,
       })
       .from(episodes)
-      .where(eq(episodes.seasonId, seasonId))
+      .where(and(eq(episodes.seasonId, seasonId), liveEpisode))
       .orderBy(asc(episodes.number)),
     db
       .select(sceneStatFields)
       .from(scenes)
       .innerJoin(episodes, eq(scenes.episodeId, episodes.id))
       .leftJoin(users, eq(scenes.updatedBy, users.id))
-      .where(eq(episodes.seasonId, seasonId))
+      .where(and(eq(episodes.seasonId, seasonId), liveScene))
       .orderBy(asc(scenes.position)),
     db
       .select({
@@ -161,7 +177,7 @@ export async function getSeason(seasonId: string) {
       stats: summarizeEpisode(
         sceneRows.filter((scene) => scene.episodeId === episode.id),
       ),
-      speakers: speakerRows.filter((speaker) => speaker.episodeId === episode.id),
+      speakers: speakerRows.filter((speaker) => speaker.episodeId === episode.id).map(withPortrait),
     })),
   };
 }
@@ -177,6 +193,10 @@ export async function getEpisode(episodeId: string) {
       title: episodes.title,
       status: episodes.status,
       summary: episodes.summary,
+      openingTheme: episodes.openingTheme,
+      outroTheme: episodes.outroTheme,
+      version: episodes.version,
+      scenesVersion: episodes.scenesVersion,
       seasonId: seasons.id,
       seasonNumber: seasons.number,
       seasonTitle: seasons.title,
@@ -185,12 +205,12 @@ export async function getEpisode(episodeId: string) {
     .from(episodes)
     .innerJoin(seasons, eq(episodes.seasonId, seasons.id))
     .innerJoin(series, eq(seasons.seriesId, series.id))
-    .where(eq(episodes.id, episodeId))
+    .where(and(eq(episodes.id, episodeId), liveEpisode))
     .limit(1);
 
   if (!episode) return null;
 
-  const [sceneRows, speakerRows] = await Promise.all([
+  const [sceneRows, speakerRows, otherEpisodes] = await Promise.all([
     db
       .select({
         id: scenes.id,
@@ -199,9 +219,10 @@ export async function getEpisode(episodeId: string) {
         timecode: scenes.timecode,
         location: scenes.location,
         beats: scenes.beats,
+        version: scenes.version,
       })
       .from(scenes)
-      .where(eq(scenes.episodeId, episodeId))
+      .where(and(eq(scenes.episodeId, episodeId), isNull(scenes.deletedAt)))
       .orderBy(asc(scenes.position)),
     db
       .select({
@@ -215,13 +236,21 @@ export async function getEpisode(episodeId: string) {
       .innerJoin(scenes, eq(sceneCharacters.sceneId, scenes.id))
       .where(eq(scenes.episodeId, episodeId))
       .orderBy(desc(sceneCharacters.lineCount), asc(characters.name)),
+    db
+      .select({ id: episodes.id, number: episodes.number, title: episodes.title })
+      .from(episodes)
+      .where(and(eq(episodes.seasonId, episode.seasonId), liveEpisode, ne(episodes.id, episodeId)))
+      .orderBy(asc(episodes.number)),
   ]);
 
   return {
     ...episode,
-    scenes: sceneRows.map((scene) => ({
+    otherEpisodes,
+    // Summed here so cards never send every scene's beats to the browser.
+    scenes: sceneRows.map(({ beats, ...scene }) => ({
       ...scene,
-      speakers: speakerRows.filter((speaker) => speaker.sceneId === scene.id),
+      ...summarizeBeats(beats),
+      speakers: speakerRows.filter((speaker) => speaker.sceneId === scene.id).map(withPortrait),
     })),
   };
 }
@@ -252,7 +281,7 @@ export async function getScene(sceneId: string) {
     .innerJoin(episodes, eq(scenes.episodeId, episodes.id))
     .innerJoin(seasons, eq(episodes.seasonId, seasons.id))
     .innerJoin(series, eq(seasons.seriesId, series.id))
-    .where(eq(scenes.id, sceneId))
+    .where(and(eq(scenes.id, sceneId), liveScene))
     .limit(1);
 
   if (!scene) return null;
@@ -261,7 +290,7 @@ export async function getScene(sceneId: string) {
     db
       .select({ id: scenes.id, kind: scenes.kind, title: scenes.title })
       .from(scenes)
-      .where(eq(scenes.episodeId, scene.episodeId))
+      .where(and(eq(scenes.episodeId, scene.episodeId), isNull(scenes.deletedAt)))
       .orderBy(asc(scenes.position)),
     db
       .select({

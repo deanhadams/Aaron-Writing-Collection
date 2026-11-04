@@ -1,4 +1,5 @@
 import { and, asc, eq, inArray, ne, sql } from "drizzle-orm";
+import { liveScene } from "@/lib/db/live";
 import {
   characterImages,
   characterRelationships,
@@ -48,7 +49,7 @@ async function relink(tx: Transaction, characterId: string, seriesId: string, na
     .from(scenes)
     .innerJoin(episodes, eq(scenes.episodeId, episodes.id))
     .innerJoin(seasons, eq(episodes.seasonId, seasons.id))
-    .where(eq(seasons.seriesId, seriesId));
+    .where(and(eq(seasons.seriesId, seriesId), liveScene));
 
   const links = rows.flatMap(({ id: sceneId, beats }) => {
     const lineCount = [...speakerLineCounts(beats)]

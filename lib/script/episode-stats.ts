@@ -51,6 +51,27 @@ export function summarizeEpisode(scenes: EpisodeSceneRow[]) {
   };
 }
 
+type OverviewEpisode = {
+  status: Status;
+  stats: { sceneCount: number; lineCount: number; runtimeMinutes: number | null };
+};
+
+/** Added up from the cards on screen, so it follows every optimistic change. */
+export function seasonOverview(episodes: OverviewEpisode[]) {
+  const total = (read: (episode: OverviewEpisode) => number) =>
+    episodes.reduce((sum, episode) => sum + read(episode), 0);
+  const count = (wanted: Status) => episodes.filter(({ status }) => status === wanted).length;
+
+  return {
+    counts: { idea: count("idea"), drafting: count("drafting"), done: count("done") },
+    sceneCount: total(({ stats }) => stats.sceneCount),
+    lineCount: total(({ stats }) => stats.lineCount),
+    runtimeMinutes: episodes.some(({ stats }) => stats.runtimeMinutes !== null)
+      ? total(({ stats }) => stats.runtimeMinutes ?? 0)
+      : null,
+  };
+}
+
 export type SeasonSceneRow = EpisodeSceneRow & { id: string; episodeId: string };
 
 export function summarizeSeason(

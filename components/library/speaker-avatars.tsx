@@ -1,14 +1,14 @@
 import type { CSSProperties } from "react";
-import { imageUrl } from "@/lib/images";
 
+// The url comes from the server, because the bucket's address is a server setting.
 type Speaker = {
   name: string;
   color: string | null;
-  portraitKey: string | null;
+  portraitUrl: string | null;
 };
 
 function Avatar({ speaker }: { speaker: Speaker }) {
-  const portrait = imageUrl(speaker.portraitKey);
+  const portrait = speaker.portraitUrl;
 
   return (
     <>
