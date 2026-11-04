@@ -16,10 +16,23 @@ A private web app where Aaron writes anime screenplays and keeps a character bib
 |---|---|
 | `npm run dev` | Runs the app at http://localhost:3000 |
 | `npm test` | Runs the tests |
+| `npm run test:e2e` | Clicks every season and episode action in Edge |
 | `npm run db:migrate` | Applies database migrations |
 | `npm run db:seed` | Creates the three user accounts from `SEED_USERS` |
 | `npm run import:season -- --dry-run` | Reports on `import/Season_1.docx` without touching the database |
 | `npm run portraits:link` | Checks R2 for each character's portrait, and links any that are missing a key |
+
+## Browser tests
+
+`npm run test:e2e` drives the real site in Edge and clicks every action on the season and episode pages, then reloads to prove each change was saved. It uses the running dev server on port 3000, or starts one.
+
+Each test makes a throwaway season numbered 9000 with the title E2E, and deletes it afterwards, so real writing is never touched. It needs the database in `.env.local`.
+
+To test another address or a production build, start the site and point the suite at it:
+
+```
+E2E_BASE_URL=http://localhost:3100 npm run test:e2e
+```
 
 ## Re-importing a season
 

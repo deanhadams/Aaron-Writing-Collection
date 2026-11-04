@@ -7,6 +7,8 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    // Those are Playwright's, and need a browser: npm run test:e2e.
+    exclude: ["**/node_modules/**", "**/.next/**", "e2e/**"],
     env: { SESSION_SECRET: "test-secret-that-is-at-least-32-characters" },
   },
 });

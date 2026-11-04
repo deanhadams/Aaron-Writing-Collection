@@ -156,4 +156,5 @@ Pages use a board (`lib/structure/board.ts`, `useBoard`): a plain object outside
 - Every scene save checks a version number and writes a revision row.
 - Keep components small.
 - Write simple tests for the importer and the save logic.
+- Run `npm run test:e2e` after any UI change, in dev mode as well as against a production build. Strict Mode runs effects twice only in dev, so each mode hides bugs the other shows.
 - Commit after each step with a clear message.
