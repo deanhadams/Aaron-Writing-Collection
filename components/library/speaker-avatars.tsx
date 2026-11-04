@@ -46,6 +46,7 @@ export function SpeakerAvatars({ speakers }: { speakers: Speaker[] }) {
               {
                 backgroundColor: speaker.color ?? "var(--color-primary-strong)",
                 "--n": total - 1 - index,
+                "--m": index,
               } as CSSProperties
             }
           >
@@ -53,7 +54,10 @@ export function SpeakerAvatars({ speakers }: { speakers: Speaker[] }) {
           </span>
         ))}
         {hidden > 0 && (
-          <span className="avatar avatar-more" style={{ "--n": 0 } as CSSProperties}>
+          <span
+            className="avatar avatar-more"
+            style={{ "--n": 0, "--m": visible.length } as CSSProperties}
+          >
             +{hidden}
           </span>
         )}

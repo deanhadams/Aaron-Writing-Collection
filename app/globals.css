@@ -237,7 +237,7 @@ h4 {
   font-weight: 700;
   line-height: 1;
   color: var(--numeral-fill, white);
-  -webkit-text-stroke: 3px var(--numeral, var(--color-primary));
+  -webkit-text-stroke: var(--numeral-stroke, 3px) var(--numeral, var(--color-primary));
   paint-order: stroke fill;
   mix-blend-mode: var(--numeral-blend, multiply);
 
@@ -622,7 +622,7 @@ h4 {
   color: var(--kind-text);
 }
 
-.scene-card-preview {
+.script-preview {
   margin-top: 0.25rem;
   overflow: hidden;
   color: var(--color-muted);
@@ -669,6 +669,251 @@ h4 {
 
 .avatar:first-child {
   margin-left: 0;
+}
+
+/* ---- Episode card ---- */
+
+.episode-card {
+  --press: 0.985;
+  display: flex !important;
+  height: 100%;
+  flex-direction: column;
+  box-shadow: 0 10px 26px -16px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.episode-card::after {
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 14px 32px -10px color-mix(in srgb, var(--accent) 55%, transparent),
+    0 0 18px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.episode-card:focus-visible {
+  outline-color: var(--kind-text);
+}
+
+.ep-cover {
+  position: relative;
+  display: flex;
+  height: 90px;
+  flex-shrink: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  overflow: hidden;
+  padding: 0.6rem 0.75rem 0 1.25rem;
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+}
+
+/* Oversized so it can shift on hover without ever showing an edge. */
+.ep-cover-art {
+  position: absolute;
+  inset: -16px;
+  background:
+    radial-gradient(5rem 4rem at 78% 30%, rgb(255 255 255 / 0.35), transparent),
+    radial-gradient(7rem 5rem at 42% 110%, color-mix(in srgb, var(--cover-c) 70%, transparent), transparent),
+    linear-gradient(var(--cover-angle), var(--cover-a) 20%, var(--cover-b) 62%, var(--cover-c));
+  transition: transform 300ms var(--ease-soft);
+}
+
+.ep-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgb(255 255 255 / 0.22) 1px, transparent 1px);
+  background-size: 14px 14px;
+  mask-image: linear-gradient(to right, transparent 30%, black);
+  pointer-events: none;
+}
+
+.ep-numeral {
+  --numeral: rgb(255 255 255 / 0.85);
+  --numeral-fill: black;
+  --numeral-blend: screen;
+  --numeral-stroke: 2px;
+  position: relative;
+  display: grid;
+  width: fit-content;
+  font-family: var(--font-heading);
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.ep-numeral::before {
+  content: "";
+  position: absolute;
+  inset: -0.5rem -1rem;
+  background: radial-gradient(closest-side, rgb(255 255 255 / 0.28), transparent);
+}
+
+.ep-numeral-stroke,
+.ep-numeral-fill {
+  position: relative;
+  grid-area: 1 / 1;
+}
+
+.ep-numeral-fill {
+  background: linear-gradient(to bottom, white 30%, rgb(255 255 255 / 0.2));
+  background-clip: text;
+  color: transparent;
+}
+
+.ep-status {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid rgb(255 255 255 / 0.7);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.88);
+  backdrop-filter: blur(6px);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ep-status[data-status="idea"] {
+  --status: var(--color-violet);
+  color: var(--color-status-idea);
+}
+
+.ep-status[data-status="drafting"] {
+  --status: var(--color-neon);
+  color: var(--color-status-drafting);
+}
+
+.ep-status[data-status="done"] {
+  color: var(--color-status-done);
+}
+
+.ep-status-dot {
+  position: relative;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--status);
+}
+
+.ep-status[data-status="drafting"] .ep-status-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--status);
+  animation: pulse-dot 1.8s ease-out infinite;
+}
+
+@keyframes pulse-dot {
+  from {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+.ep-title {
+  position: relative;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+/* An invisible copy of the title carries the underline, so it wraps with the
+   text across both lines and can fade in with opacity alone. */
+.ep-title-underline {
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms var(--ease-soft);
+}
+
+.ep-title-underline span {
+  padding-bottom: 1px;
+  background: var(--gradient-signature) no-repeat left bottom / 100% 2px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.ep-segments {
+  display: flex;
+  gap: 3px;
+  margin-top: 0.75rem;
+}
+
+.ep-segments span {
+  height: 4px;
+  min-width: 0;
+  flex: 1;
+  border-radius: 999px;
+  background: var(--segment);
+  transform-origin: left;
+  animation: progress-grow 500ms var(--ease-soft);
+}
+
+.ep-segments[data-status="idea"] {
+  --segment: var(--color-violet);
+}
+
+.ep-segments[data-status="drafting"] {
+  --segment: var(--color-neon);
+}
+
+.ep-segments[data-status="done"] {
+  --segment: #22c55e;
+}
+
+.episode-card-arrow {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--kind-text);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition:
+    opacity 200ms var(--ease-soft),
+    transform 200ms var(--ease-soft);
+}
+
+@media (hover: hover) {
+  .episode-card:hover .ep-cover-art {
+    transform: translate3d(-8px, 4px, 0) scale(1.06);
+  }
+
+  .episode-card:hover .ep-title-underline {
+    opacity: 1;
+  }
+
+  .episode-card:hover .episode-card-arrow {
+    opacity: 1;
+    transform: none;
+  }
+
+  .episode-card:hover .avatar {
+    transform: translateX(calc(var(--m) * 3px));
+  }
+}
+
+.episode-card:focus-visible .episode-card-arrow {
+  opacity: 1;
+  transform: none;
+}
+
+.episode-card:focus-visible .ep-title-underline {
+  opacity: 1;
 }
 
 .avatar-more {

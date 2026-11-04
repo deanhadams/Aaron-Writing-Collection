@@ -75,6 +75,10 @@ Set by `data-kind` on an element, as `--kind` (exact color, decoration only) and
 | `outro` | `#00D9FF` | `#0B6A85` |
 | `post_credit` | `#FF4FA3` | `#B01C72` |
 
+### Episode covers
+
+`coverStyle(number)` in [components/library/episode-cover.tsx](components/library/episode-cover.tsx) cycles through six gradients. It sets `--cover-a/b/c`, `--cover-angle`, `--accent` (decoration) and `--kind-text` (AA text). `--cover-a` must stay dark enough for white text. Status colors: idea `violet`, drafting `neon`, done `#22C55E` for dots and bars, with the `status-*` colors for their text.
+
 ### Gradients (CSS variables)
 
 | Variable | Stops | Use |

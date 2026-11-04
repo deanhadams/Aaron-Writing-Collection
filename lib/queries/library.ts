@@ -2,6 +2,7 @@ import "server-only";
 import { asc, desc, eq, sql } from "drizzle-orm";
 import { connection } from "next/server";
 import { db } from "@/lib/db";
+import { summarizeEpisode } from "@/lib/script/episode-stats";
 import {
   characters,
   episodes,
@@ -9,6 +10,7 @@ import {
   scenes,
   seasons,
   series,
+  users,
 } from "@/lib/db/schema";
 
 const UUID =
@@ -17,8 +19,6 @@ const UUID =
 // Postgres rejects a malformed uuid with an error, which would show as a 500
 // for a mistyped URL. Treat those as "not found" instead.
 const isUuid = (value: string) => UUID.test(value);
-
-const sceneCount = sql<number>`count(${scenes.id})::int`;
 
 // connection() keeps these reads at request time, so edits always show and
 // nothing is baked into the build.
@@ -63,21 +63,65 @@ export async function getSeason(seasonId: string) {
 
   if (!season) return null;
 
-  const episodeRows = await db
-    .select({
-      id: episodes.id,
-      number: episodes.number,
-      title: episodes.title,
-      status: episodes.status,
-      sceneCount,
-    })
-    .from(episodes)
-    .leftJoin(scenes, eq(scenes.episodeId, episodes.id))
-    .where(eq(episodes.seasonId, seasonId))
-    .groupBy(episodes.id)
-    .orderBy(asc(episodes.number));
+  // Three queries however many episodes there are. Counting in SQL means the
+  // page never has to download every scene's beats just to draw its cards.
+  const [episodeRows, sceneRows, speakerRows] = await Promise.all([
+    db
+      .select({
+        id: episodes.id,
+        number: episodes.number,
+        title: episodes.title,
+        status: episodes.status,
+        summary: episodes.summary,
+      })
+      .from(episodes)
+      .where(eq(episodes.seasonId, seasonId))
+      .orderBy(asc(episodes.number)),
+    db
+      .select({
+        episodeId: scenes.episodeId,
+        timecode: scenes.timecode,
+        updatedAt: scenes.updatedAt,
+        editor: users.name,
+        lineCount: sql<number>`(
+          select count(*)::int from jsonb_array_elements(${scenes.beats}) as beat
+          where beat->>'type' in ('dialogue', 'vo')
+        )`,
+        firstVisual: sql<string | null>`jsonb_path_query_first(
+          ${scenes.beats}, '$[*] ? (@.type == "visual" && @.text != "").text'
+        ) #>> '{}'`,
+      })
+      .from(scenes)
+      .innerJoin(episodes, eq(scenes.episodeId, episodes.id))
+      .leftJoin(users, eq(scenes.updatedBy, users.id))
+      .where(eq(episodes.seasonId, seasonId))
+      .orderBy(asc(scenes.position)),
+    db
+      .select({
+        episodeId: scenes.episodeId,
+        name: characters.name,
+        color: characters.color,
+        portraitKey: characters.portraitKey,
+      })
+      .from(sceneCharacters)
+      .innerJoin(scenes, eq(sceneCharacters.sceneId, scenes.id))
+      .innerJoin(episodes, eq(scenes.episodeId, episodes.id))
+      .innerJoin(characters, eq(sceneCharacters.characterId, characters.id))
+      .where(eq(episodes.seasonId, seasonId))
+      .groupBy(scenes.episodeId, characters.id)
+      .orderBy(desc(sql`sum(${sceneCharacters.lineCount})`), asc(characters.name)),
+  ]);
 
-  return { ...season, episodes: episodeRows };
+  return {
+    ...season,
+    episodes: episodeRows.map((episode) => ({
+      ...episode,
+      stats: summarizeEpisode(
+        sceneRows.filter((scene) => scene.episodeId === episode.id),
+      ),
+      speakers: speakerRows.filter((speaker) => speaker.episodeId === episode.id),
+    })),
+  };
 }
 
 export async function getEpisode(episodeId: string) {

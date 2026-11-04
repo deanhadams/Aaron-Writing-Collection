@@ -1,6 +1,6 @@
 const SHAPES = {
-  covers: { list: "grid gap-6 sm:grid-cols-2", item: "h-80 rounded-2xl" },
-  cards: { list: "grid gap-5 sm:grid-cols-2 lg:grid-cols-3", item: "h-44 rounded-2xl" },
+  covers: { list: "grid grid-cols-1 gap-6 sm:grid-cols-2", item: "h-80 rounded-2xl" },
+  cards: { list: "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3", item: "h-80 rounded-2xl" },
   timeline: { list: "space-y-5 pl-11", item: "h-40 rounded-2xl" },
   script: { list: "mx-auto max-w-3xl", item: "h-[32rem] rounded-xl" },
 };

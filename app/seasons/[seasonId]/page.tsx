@@ -14,6 +14,8 @@ async function Season({ params }: { params: Params }) {
   const season = await getSeason(seasonId);
   if (!season) notFound();
 
+  const now = new Date();
+
   return (
     <>
       <Breadcrumbs crumbs={[{ label: "Library", href: "/" }]} />
@@ -25,9 +27,14 @@ async function Season({ params }: { params: Params }) {
       {season.episodes.length === 0 ? (
         <EmptyState title="No episodes yet" />
       ) : (
-        <ol className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <ol className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {season.episodes.map((episode, index) => (
-            <EpisodeCard key={episode.id} episode={episode} index={index} />
+            <EpisodeCard
+              key={episode.id}
+              episode={episode}
+              index={index}
+              now={now}
+            />
           ))}
         </ol>
       )}

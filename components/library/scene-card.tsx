@@ -69,7 +69,7 @@ export function SceneCard({
               <h2 className="mt-0.5 text-xl font-semibold leading-snug sm:text-2xl">
                 {sceneTitle(scene)}
               </h2>
-              {preview && <p className="scene-card-preview">{preview}</p>}
+              {preview && <p className="script-preview">{preview}</p>}
             </div>
 
             {hasAside && (

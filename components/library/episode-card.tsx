@@ -1,31 +1,111 @@
 import Link from "next/link";
-import type { CSSProperties } from "react";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { plural } from "@/lib/format";
+import type { CSSProperties, ReactNode } from "react";
+import { formatRelative, plural } from "@/lib/format";
+import type { getSeason } from "@/lib/queries/library";
+import { coverStyle, EpisodeCover } from "./episode-cover";
+import { ArrowIcon, ChatIcon, ClockIcon, LayersIcon } from "./scene-icons";
+import { SpeakerAvatars } from "./speaker-avatars";
 
-type Episode = {
-  id: string;
-  number: number;
-  title: string;
-  status: "idea" | "drafting" | "done";
-  sceneCount: number;
-};
+type Episode = NonNullable<Awaited<ReturnType<typeof getSeason>>>["episodes"][number];
 
-export function EpisodeCard({ episode, index }: { episode: Episode; index: number }) {
+function Meta({ icon, children }: { icon: ReactNode; children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      {icon}
+      {children}
+    </span>
+  );
+}
+
+function Blurb({ episode }: { episode: Episode }) {
+  if (episode.summary) {
+    return <p className="mt-1 truncate text-sm text-muted">{episode.summary}</p>;
+  }
+  if (episode.stats.firstVisual) {
+    return <p className="script-preview text-sm">{episode.stats.firstVisual}</p>;
+  }
+  return null;
+}
+
+function editedText(edit: Episode["stats"]["lastEdited"], now: Date) {
+  if (!edit) return null;
+  const when = formatRelative(edit.at, now);
+  return edit.by ? `Last edited by ${edit.by} · ${when}` : `Last edited ${when}`;
+}
+
+export function EpisodeCard({
+  episode,
+  index,
+  now,
+}: {
+  episode: Episode;
+  index: number;
+  now: Date;
+}) {
+  const { sceneCount, lineCount, runtimeMinutes, lastEdited } = episode.stats;
+  const edited = editedText(lastEdited, now);
+  const hasFooter = episode.speakers.length > 0 || edited;
+
   return (
     <li className="rise" style={{ "--i": index } as CSSProperties}>
       <Link
         href={`/episodes/${episode.id}`}
-        className="glass glass-link flex! h-full flex-col p-5"
+        style={coverStyle(episode.number)}
+        className="glass glass-link episode-card"
       >
-        <div className="flex items-start justify-between gap-3">
-          <span className="numeral-outline text-6xl">{episode.number}</span>
-          <StatusBadge status={episode.status} />
+        <EpisodeCover number={episode.number} status={episode.status} />
+
+        <div className="flex flex-1 flex-col p-5">
+          <h2 className="ep-title">
+            {episode.title}
+            <span aria-hidden className="ep-title-underline">
+              <span>{episode.title}</span>
+            </span>
+          </h2>
+
+          <Blurb episode={episode} />
+
+          {sceneCount > 0 && (
+            <>
+              <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-medium text-muted">
+                <Meta icon={<LayersIcon className="size-3.5" />}>
+                  {plural(sceneCount, "scene")}
+                </Meta>
+                {lineCount > 0 && (
+                  <Meta icon={<ChatIcon className="size-3.5" />}>
+                    {plural(lineCount, "line")}
+                  </Meta>
+                )}
+                {runtimeMinutes !== null && (
+                  <Meta icon={<ClockIcon className="size-3.5" />}>
+                    {runtimeMinutes} min
+                  </Meta>
+                )}
+              </p>
+
+              <div aria-hidden className="ep-segments" data-status={episode.status}>
+                {Array.from({ length: sceneCount }, (_, segment) => (
+                  <span key={segment} />
+                ))}
+              </div>
+            </>
+          )}
+
+          {hasFooter && (
+            <div className="mt-auto flex items-center justify-between gap-3 pt-4 pr-6">
+              {episode.speakers.length > 0 && (
+                <SpeakerAvatars speakers={episode.speakers} />
+              )}
+              {edited && (
+                <p className="ml-auto text-right text-xs text-balance text-muted">
+                  {edited}
+                </p>
+              )}
+            </div>
+          )}
         </div>
-        <h2 className="mt-4 text-xl font-semibold leading-snug">{episode.title}</h2>
-        <p className="eyebrow mt-auto pt-3 text-muted">
-          {plural(episode.sceneCount, "scene")}
-        </p>
+
+        <ArrowIcon className="episode-card-arrow" />
       </Link>
     </li>
   );

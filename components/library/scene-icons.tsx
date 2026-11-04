@@ -52,6 +52,31 @@ export const MapPinIcon = (props: IconProps) => (
   </Icon>
 );
 
+export const CheckIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M5 12.5l4.5 4.5L19 7.5" />
+  </Icon>
+);
+
+export const LayersIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M12 3l9 5-9 5-9-5ZM3 13l9 5 9-5" />
+  </Icon>
+);
+
+export const ChatIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M21 12a8 8 0 0 1-11.8 7L4 20.5l1.5-5A8 8 0 1 1 21 12Z" />
+  </Icon>
+);
+
+export const ClockIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </Icon>
+);
+
 export const ArrowIcon = (props: IconProps) => (
   <Icon {...props}>
     <path d="M5 12h14M13 6l6 6-6 6" />

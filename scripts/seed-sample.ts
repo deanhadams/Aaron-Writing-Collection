@@ -13,6 +13,7 @@ import {
   scenes,
   seasons,
   series,
+  users,
   type Beat,
   type BeatType,
 } from "../lib/db/schema";
@@ -37,9 +38,12 @@ const CAST = [
   { name: "OLD TOM", fullName: "Tom Pell", color: "#7E22CE" },
 ];
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 const EPISODES = [
   {
     number: 1,
+    editedDaysAgo: 2,
     title: "The Lamp That Listened",
     status: "done" as const,
     summary:
@@ -95,6 +99,7 @@ const EPISODES = [
   },
   {
     number: 2,
+    editedDaysAgo: 0.2,
     title: "Nine Doors Down",
     status: "drafting" as const,
     summary: "Jun counts the doors on Lantern Street and gets a different number.",
@@ -112,7 +117,71 @@ const EPISODES = [
       { kind: "outro" as const, title: null, location: null, beats: [] },
     ],
   },
-  { number: 3, title: "Untitled Idea", status: "idea" as const, summary: null, scenes: [] },
+  {
+    number: 3,
+    editedDaysAgo: 9,
+    title: "The House That Moved",
+    status: "idea" as const,
+    summary: null,
+    scenes: [
+      {
+        kind: "scene" as const,
+        title: "An Empty Lot",
+        location: "END OF THE STREET - DAY",
+        beats: [beat("visual", "Where number nine stood, only a square of pale grass.")],
+      },
+    ],
+  },
+  {
+    number: 4,
+    editedDaysAgo: 0,
+    title: "Untitled Idea",
+    status: "idea" as const,
+    summary: null,
+    scenes: [],
+  },
+  {
+    number: 5,
+    editedDaysAgo: 40,
+    title: "A Very Long Title for the Night the Whole of Lantern Street Went Dark",
+    status: "done" as const,
+    summary: "The lamps go out one by one, and the Keeper finally asks for something in return.",
+    scenes: [
+      {
+        kind: "scene" as const,
+        title: "Lights Out",
+        timecode: "0:00 - 11:00",
+        location: "LANTERN STREET - NIGHT",
+        beats: [
+          say("THE KEEPER", "Every light has a price."),
+          say("OLD TOM", "And who pays it?"),
+          say("MIRA", "Not us."),
+        ],
+      },
+      {
+        kind: "scene" as const,
+        title: "The Bargain",
+        timecode: "11:00 - 22:30",
+        location: "HARBOUR WALL - NIGHT",
+        beats: [say("MIRA", "Name it."), say("ROOK", "Mira, wait.")],
+      },
+    ],
+  },
+  {
+    number: 6,
+    editedDaysAgo: 1,
+    title: "Morning Post",
+    status: "drafting" as const,
+    summary: "The first delivery after the dark.",
+    scenes: [
+      {
+        kind: "prologue" as const,
+        title: "Sunrise Round",
+        location: "LANTERN STREET - DAWN",
+        beats: [say("JUN", "Same route?"), say("ADA", "Same route.")],
+      },
+    ],
+  },
 ];
 
 async function removeSample() {
@@ -137,7 +206,10 @@ async function addSample() {
       .values({ seriesId, number: 1, title: "Lantern Street" })
       .returning({ id: seasons.id });
 
-    for (const { scenes: sceneList, ...episode } of EPISODES) {
+    // Sample edits are credited to whichever account exists first.
+    const [editor] = await tx.select({ id: users.id }).from(users).limit(1);
+
+    for (const { scenes: sceneList, editedDaysAgo, ...episode } of EPISODES) {
       const [{ id: episodeId }] = await tx
         .insert(episodes)
         .values({ ...episode, seasonId })
@@ -146,7 +218,13 @@ async function addSample() {
       for (const [index, scene] of sceneList.entries()) {
         const [{ id: sceneId }] = await tx
           .insert(scenes)
-          .values({ ...scene, episodeId, position: index + 1 })
+          .values({
+            ...scene,
+            episodeId,
+            position: index + 1,
+            updatedBy: editor?.id,
+            updatedAt: new Date(Date.now() - editedDaysAgo * DAY_MS),
+          })
           .returning({ id: scenes.id });
 
         const speakers = [...speakerLineCounts(scene.beats)].flatMap(
