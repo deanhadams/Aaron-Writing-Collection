@@ -107,6 +107,10 @@ The text and button gradients are deepened versions of the signature, because cy
 
 Fonts: **Outfit** (headings), **Inter** (body), **Courier Prime** (script text only).
 
+### Scene editor
+
+Beat rows take their color from `data-beat` (`--beat` for decoration, `--beat-text` for AA text). `lib/editor/store.ts` and `save-queue.ts` are plain objects outside React: rows subscribe to their own beat, and saves outlive a hidden route. Scene writes go through `saveScene` or `restoreRevision` in `lib/scenes/save-scene.ts`.
+
 ### Motion and performance rules
 
 - Animate `transform` and `opacity` only, under 300ms for interactions. Put glows on a pseudo-element and fade its opacity rather than animating `box-shadow`.

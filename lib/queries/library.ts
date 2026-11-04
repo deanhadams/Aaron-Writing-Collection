@@ -18,7 +18,7 @@ const UUID =
 
 // Postgres rejects a malformed uuid with an error, which would show as a 500
 // for a mistyped URL. Treat those as "not found" instead.
-const isUuid = (value: string) => UUID.test(value);
+export const isUuid = (value: string) => UUID.test(value);
 
 // Counted in SQL so listing pages never download every scene's beats.
 const sceneStatFields = {
@@ -238,6 +238,7 @@ export async function getScene(sceneId: string) {
       timecode: scenes.timecode,
       location: scenes.location,
       beats: scenes.beats,
+      version: scenes.version,
       episodeId: episodes.id,
       episodeNumber: episodes.number,
       episodeTitle: episodes.title,
@@ -263,9 +264,10 @@ export async function getScene(sceneId: string) {
       .where(eq(scenes.episodeId, scene.episodeId))
       .orderBy(asc(scenes.position)),
     db
-      .select({ name: characters.name, color: characters.color })
+      .select({ name: characters.name, fullName: characters.fullName, color: characters.color })
       .from(characters)
-      .where(eq(characters.seriesId, scene.seriesId)),
+      .where(eq(characters.seriesId, scene.seriesId))
+      .orderBy(asc(characters.name)),
   ]);
 
   const index = siblings.findIndex((sibling) => sibling.id === sceneId);
@@ -274,8 +276,6 @@ export async function getScene(sceneId: string) {
     ...scene,
     previous: siblings[index - 1] ?? null,
     next: siblings[index + 1] ?? null,
-    characterColors: new Map(
-      cast.map(({ name, color }) => [name.toUpperCase(), color]),
-    ),
+    cast,
   };
 }

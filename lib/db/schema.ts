@@ -130,6 +130,23 @@ export const sceneRevisions = pgTable(
   (t) => [index().on(t.sceneId, t.savedAt)],
 );
 
+// Who has a scene open in the editor, refreshed by a heartbeat.
+export const scenePresence = pgTable(
+  "scene_presence",
+  {
+    sceneId: uuid("scene_id")
+      .notNull()
+      .references(() => scenes.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    lastSeen: timestamp("last_seen", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.sceneId, t.userId] })],
+);
+
 export const characters = pgTable(
   "characters",
   {

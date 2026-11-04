@@ -8,6 +8,13 @@
       "when": 1793742298905,
       "tag": "0000_silent_jubilee",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793788007142,
+      "tag": "0001_happy_praxagora",
+      "breakpoints": true
     }
   ]
 }
