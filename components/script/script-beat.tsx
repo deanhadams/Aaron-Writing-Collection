@@ -39,7 +39,7 @@ function Dialogue({
   links?: Links;
 }) {
   return (
-    <div className="mx-auto my-7 max-w-md">
+    <div id={`beat-${beat.id}`} className="mx-auto my-7 max-w-md">
       <p className="text-center">
         {speakerParts(names).map(({ text, isName }, index) =>
           isName ? <SpeakerName key={index} name={text} colors={colors} links={links} /> : text,
@@ -96,14 +96,14 @@ export function ScriptBeat({
     }
     case "visual":
       return (
-        <p className="my-5 whitespace-pre-wrap border-l-2 border-primary pl-4 italic">
+        <p id={`beat-${beat.id}`} className="my-5 whitespace-pre-wrap border-l-2 border-primary pl-4 italic">
           <span className="sr-only">Visual: </span>
           {beat.text}
         </p>
       );
     case "sound":
       return (
-        <p className="my-5 flex gap-3 whitespace-pre-wrap italic">
+        <p id={`beat-${beat.id}`} className="my-5 flex gap-3 whitespace-pre-wrap italic">
           <WaveformIcon />
           <span>
             <span className="sr-only">Sound: </span>
@@ -112,10 +112,14 @@ export function ScriptBeat({
         </p>
       );
     case "action":
-      return <p className="my-5 whitespace-pre-wrap">{beat.text}</p>;
+      return (
+        <p id={`beat-${beat.id}`} className="my-5 whitespace-pre-wrap">
+          {beat.text}
+        </p>
+      );
     case "note":
       return (
-        <p className="my-5 whitespace-pre-wrap rounded-r-lg border-l-2 border-neon bg-neon/10 px-4 py-2 font-sans text-sm">
+        <p id={`beat-${beat.id}`} className="my-5 whitespace-pre-wrap rounded-r-lg border-l-2 border-neon bg-neon/10 px-4 py-2 font-sans text-sm">
           {beat.text}
         </p>
       );

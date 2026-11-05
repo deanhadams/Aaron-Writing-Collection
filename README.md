@@ -20,6 +20,7 @@ A private web app where Aaron writes anime screenplays and keeps a character bib
 | `npm run db:migrate` | Applies database migrations |
 | `npm run db:seed` | Creates the three user accounts from `SEED_USERS` |
 | `npm run import:season -- --dry-run` | Reports on `import/Season_1.docx` without touching the database |
+| `npm run lore:seed` | Adds the starter lore entries, titles and categories only. Safe to run again |
 | `npm run export:check` | Exports every season to Word and reads it back with the importer, listing any difference. Read-only |
 | `npm run portraits:link` | Checks R2 for each character's portrait, and links any that are missing a key |
 
@@ -40,6 +41,31 @@ Download everything, in the account menu, streams a zip:
 | `manifest.json` | The time, row counts, and every image's R2 key and public URL. The images themselves are not included |
 
 Each download is recorded in `backups_log`.
+
+## Search
+
+Press Ctrl+K or Cmd+K anywhere, or use the search button in the top bar. Enter opens the highlighted result, and the full results page is at `/search`.
+
+| Type this | To find |
+|---|---|
+| `Desruc` | Any match. Prefixes count, and a slip like `Revok` still finds Revoc |
+| `"air force"` | Those words together, in that order |
+| `force -air` | Scenes with force and without air |
+| `speaker:Revoc` | Scenes where Revoc speaks, through aliases too |
+| `kind:outro` | A scene kind: prologue, scene, outro or post-credit |
+| `ep:3-5` | Episodes 3 to 5 |
+
+A scene result opens in whichever view you were last in, the reader or the scene page, at the exact line.
+
+Text search needs the `pg_trgm` extension, which migration 0006 turns on.
+
+## Lore
+
+Entries live at `/lore`. Text is markdown, autosaved like scenes, with a History drawer. Link anything with `[[Character Name]]` or `[[Lore Title]]`: typing `[[` offers names, and a name with no entry shows a Create entry button. Other names in an entry's details feed both those links and Mentioned in.
+
+To change the categories, edit `LORE_CATEGORIES` in `lib/lore/categories.ts`.
+
+Covers and inline images go through the same R2 upload as character images, under `lore/<slug>/`.
 
 ## Browser tests
 

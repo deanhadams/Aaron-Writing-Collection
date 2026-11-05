@@ -9,6 +9,8 @@ const EXTENSIONS: Record<string, string> = {
 
 export const ACCEPTED_TYPES = Object.keys(EXTENSIONS);
 
+export const extensionFor = (contentType: string) => EXTENSIONS[contentType];
+
 export type UploadKind = "portrait" | "image";
 
 export type UploadRequest = { kind: UploadKind; contentType: string; size: number };

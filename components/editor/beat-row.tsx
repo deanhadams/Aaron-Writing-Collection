@@ -92,7 +92,7 @@ export const BeatRow = memo(function BeatRow({ id, position }: { id: string; pos
   const label = `${BEAT_LABELS[beat.type]} text, beat ${position}`;
 
   return (
-    <li ref={setNodeRef} style={style} data-beat={beat.type} data-dragging={isDragging || undefined} className="beat-row">
+    <li ref={setNodeRef} id={`beat-${beat.id}`} style={style} data-beat={beat.type} data-dragging={isDragging || undefined} className="beat-row">
       <button
         ref={setActivatorNodeRef}
         type="button"

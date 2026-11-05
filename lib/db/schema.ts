@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { sql, type SQL } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -12,7 +12,20 @@ import {
   unique,
   uniqueIndex,
   uuid,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
+
+/**
+ * Computed by Postgres from the row itself, so no save, restore or import can
+ * leave it stale, and filling it in touches no version, revision or timestamp.
+ */
+const searchColumn = (expression: SQL) =>
+  text("search_text").notNull().generatedAlwaysAs(expression);
+
+const searchIndexes = (table: string, column: AnyPgColumn) => [
+  index(`${table}_search_fts`).using("gin", sql`to_tsvector('simple', ${column})`),
+  index(`${table}_search_trgm`).using("gin", sql`${column} gin_trgm_ops`),
+];
 
 export const episodeStatus = pgEnum("episode_status", [
   "idea",
@@ -99,8 +112,10 @@ export const episodes = pgTable(
     deletedBy: uuid("deleted_by").references(() => users.id, {
       onDelete: "set null",
     }),
+    searchText: searchColumn(sql`search_join(title, summary)`),
   },
   (t) => [
+    ...searchIndexes("episodes", t.searchText),
     // Partial: a deleted episode's number is free for a new one.
     uniqueIndex("episodes_live_number_unique")
       .on(t.seasonId, t.number)
@@ -140,9 +155,11 @@ export const scenes = pgTable(
     deletedBy: uuid("deleted_by").references(() => users.id, {
       onDelete: "set null",
     }),
+    searchText: searchColumn(sql`scene_search_text(title, location, beats)`),
   },
   // Not unique: drag-reordering rewrites positions row by row.
   (t) => [
+    ...searchIndexes("scenes", t.searchText),
     index().on(t.episodeId, t.position),
     unique().on(t.importSeasonId, t.importKey),
   ],
@@ -215,8 +232,11 @@ export const characters = pgTable(
       onDelete: "set null",
     }),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+    searchText: searchColumn(
+      sql`search_join(VARIADIC (ARRAY[name, full_name, role, gift, appearance, personality, backstory, notes] || aliases))`,
+    ),
   },
-  (t) => [unique().on(t.seriesId, t.name)],
+  (t) => [...searchIndexes("characters", t.searchText), unique().on(t.seriesId, t.name)],
 );
 
 export const characterRelationships = pgTable(
@@ -275,10 +295,63 @@ export const loreEntries = pgTable(
       .notNull()
       .references(() => series.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
+    slug: text("slug").notNull().unique(),
     category: text("category"),
+    summary: text("summary"),
     body: text("body").notNull().default(""),
+    coverKey: text("cover_key"),
+    tags: text("tags").array().notNull().default(sql`'{}'::text[]`),
+    // Other names scripts use for this, for "Mentioned in" and [[links]].
+    aliases: text("aliases").array().notNull().default(sql`'{}'::text[]`),
+    version: integer("version").notNull().default(1),
+    createdBy: uuid("created_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    updatedBy: uuid("updated_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    deletedBy: uuid("deleted_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    searchText: searchColumn(
+      sql`search_join(VARIADIC (ARRAY[title, summary, body] || tags || aliases))`,
+    ),
   },
-  (t) => [index().on(t.seriesId, t.category)],
+  (t) => [...searchIndexes("lore_entries", t.searchText), index().on(t.seriesId, t.category)],
+);
+
+export type LoreDraft = {
+  title: string;
+  category: string | null;
+  summary: string | null;
+  body: string;
+  coverKey: string | null;
+  tags: string[];
+  aliases: string[];
+};
+
+export const loreRevisions = pgTable(
+  "lore_revisions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    loreId: uuid("lore_id")
+      .notNull()
+      .references(() => loreEntries.id, { onDelete: "cascade" }),
+    content: jsonb("content").$type<LoreDraft>().notNull(),
+    // Set on the row a restore writes, so autosaves never merge into it.
+    sealed: boolean("sealed").notNull().default(false),
+    savedBy: uuid("saved_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    savedAt: timestamp("saved_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index().on(t.loreId, t.savedAt)],
 );
 
 // One row per person per season: the last scene they read.

@@ -16,13 +16,13 @@ const MAX_RETRY_MS = 30_000;
  * stays alive but hidden, so a save has to outlive the component that asked
  * for it. After a conflict nothing is sent until someone chooses what to do.
  */
-export function createSaveQueue({
+export function createSaveQueue<Doc = SceneFields>({
   getDoc,
   send,
   version: startVersion,
 }: {
-  getDoc: () => SceneFields;
-  send: (doc: SceneFields, version: number) => Promise<SendResult>;
+  getDoc: () => Doc;
+  send: (doc: Doc, version: number) => Promise<SendResult>;
   version: number;
 }) {
   let version = startVersion;

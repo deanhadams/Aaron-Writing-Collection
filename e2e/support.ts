@@ -1,11 +1,15 @@
 import { createHmac } from "node:crypto";
 import { test as base, expect, type Page } from "@playwright/test";
 import dotenv from "dotenv";
-import { and, eq, gte } from "drizzle-orm";
+import { and, eq, gte, like, or } from "drizzle-orm";
+import type { LoreCategory as LoreCategoryName } from "@/lib/lore/categories";
 
 dotenv.config({ path: ".env.local", quiet: true });
 
 const E2E_TITLE = "E2E";
+
+/** A word no real scene will ever use, so search tests find only their own scene. */
+export const TOKEN = "zanzibarquill";
 const FIRST_E2E_SEASON = 9000;
 
 type World = {
@@ -22,8 +26,28 @@ const database = async () => {
 
 /** Crashed runs leave their season behind, so each run clears those first. */
 async function clearSeasons() {
-  const { db, seasons } = await database();
+  const { db, loreEntries, seasons } = await database();
   await db.delete(seasons).where(and(eq(seasons.title, E2E_TITLE), gte(seasons.number, FIRST_E2E_SEASON)));
+  await db.delete(loreEntries).where(or(like(loreEntries.title, "E2E %"), eq(loreEntries.title, "Alpha line")));
+}
+
+/** Made directly, so a lore test starts on the feature it is about. */
+export async function createLoreEntry(title: string, category: LoreCategoryName, fields: { body?: string; tags?: string[] } = {}) {
+  const { db, loreEntries, series } = await database();
+  const [show] = await db.select().from(series).limit(1);
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+  const [created] = await db
+    .insert(loreEntries)
+    .values({ seriesId: show.id, title, slug, category, body: fields.body ?? "Add details here…", tags: fields.tags ?? [] })
+    .returning({ id: loreEntries.id, slug: loreEntries.slug });
+  return created;
+}
+
+/** Another person's save, arriving behind the editor's back. */
+export async function editLoreEntry(id: string, body: string) {
+  const { db, loreEntries } = await database();
+  await db.update(loreEntries).set({ body, version: 2 }).where(eq(loreEntries.id, id));
 }
 
 /** A throwaway season, so no test ever touches real writing. */
@@ -58,7 +82,10 @@ async function seedWorld(): Promise<World> {
         position: index + 1,
         title,
         timecode: `${index}:00 - ${index + 1}:00`,
-        beats: [line(`${title} line`)],
+        beats:
+          title === "Alpha"
+            ? [line(`${title} line`), { ...line(`The word is ${TOKEN} today.`), character: "DESRUC" }]
+            : [line(`${title} line`)],
       })),
     )
     .returning();
@@ -143,7 +170,7 @@ async function reactReady(page: Page) {
   await page.waitForLoadState("networkidle");
   await page.waitForFunction(
     () => {
-      const button = document.querySelector("main button");
+      const button = document.querySelector("main button, main a");
       return !!button && Object.keys(button).some((key) => key.startsWith("__reactProps"));
     },
     undefined,

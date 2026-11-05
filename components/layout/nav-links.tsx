@@ -17,6 +17,11 @@ const NAV_ITEMS = [
     label: "Characters",
     isActive: (path: string) => path === "/characters" || path.startsWith("/characters/"),
   },
+  {
+    href: "/lore",
+    label: "Lore",
+    isActive: (path: string) => path === "/lore" || path.startsWith("/lore/"),
+  },
 ];
 
 function NavList({ pathname }: { pathname?: string }) {

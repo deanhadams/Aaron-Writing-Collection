@@ -270,6 +270,7 @@ describe("from the database", () => {
         "content/characters.json",
         "content/episodes.json",
         "content/lore_entries.json",
+        "content/lore_revisions.json",
         "content/scene_revisions.json",
         "content/scenes.json",
         "content/seasons.json",

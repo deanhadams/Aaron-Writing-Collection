@@ -59,21 +59,30 @@ function putWithProgress(url: string, file: File, onProgress: (percent: number) 
   });
 }
 
-/** Sends a file straight to R2, then returns the key to attach. */
+/** Asks for a signed address, then sends the file straight to R2. */
+export async function sendToStorage(
+  endpoint: string,
+  body: Record<string, unknown>,
+  file: File,
+  onProgress: (percent: number) => void,
+) {
+  const response = await fetch(endpoint, json("POST", body));
+  if (!response.ok) throw new Error(await errorText(response, "Could not start the upload"));
+
+  const { url, key, publicUrl } = (await response.json()) as { url: string; key: string; publicUrl: string | null };
+  await putWithProgress(url, file, onProgress);
+  return { key, publicUrl };
+}
+
+/** Returns the key to attach. */
 export async function uploadFile(
   characterId: string,
   file: File,
   kind: UploadKind,
   onProgress: (percent: number) => void,
 ) {
-  const response = await fetch(
-    `/api/characters/${characterId}/uploads`,
-    json("POST", { kind, contentType: file.type, size: file.size }),
-  );
-  if (!response.ok) throw new Error(await errorText(response, "Could not start the upload"));
-
-  const { url, key } = (await response.json()) as { url: string; key: string };
-  await putWithProgress(url, file, onProgress);
+  const body = { kind, contentType: file.type, size: file.size };
+  const { key } = await sendToStorage(`/api/characters/${characterId}/uploads`, body, file, onProgress);
   return key;
 }
 

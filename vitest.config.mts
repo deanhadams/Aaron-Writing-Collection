@@ -7,6 +7,9 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    // The first test in a file also runs every migration once.
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
     // Those are Playwright's, and need a browser: npm run test:e2e.
     exclude: ["**/node_modules/**", "**/.next/**", "e2e/**"],
     env: { SESSION_SECRET: "test-secret-that-is-at-least-32-characters" },

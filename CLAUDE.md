@@ -31,13 +31,13 @@ seasons(id, series_id, number, title, summary, version)
          -- version also guards the list of episodes
 episodes(id, season_id, number, title, status, summary,
          opening_theme, outro_theme, version, scenes_version,
-         import_key, deleted_at, deleted_by)
+         import_key, deleted_at, deleted_by, search_text)
          -- status: idea | drafting | done
          -- version: its own fields. scenes_version: its list of scenes
          -- number is unique among live episodes only
 scenes(id, episode_id, position, kind, title, timecode, location,
        beats jsonb, version, updated_by, updated_at,
-       import_key, import_season_id, deleted_at, deleted_by)
+       import_key, import_season_id, deleted_at, deleted_by, search_text)
          -- kind: prologue | scene | outro | post_credit
          -- beats: [{id, type, character?, parenthetical?, text}]
          -- import_key: its place in the Word file, like e12:s3. Empty if made on the site
@@ -47,12 +47,16 @@ scene_revisions(id, scene_id, beats jsonb, title, timecode, location, sealed,
 scene_presence(scene_id, user_id, last_seen)        -- editor heartbeat
 characters(id, series_id, name, full_name, role, gift, appearance,
            personality, backstory, powers, notes, color, portrait_key,
-           slug, aliases text[], version, updated_by, updated_at)
+           slug, aliases text[], version, updated_by, updated_at, search_text)
 character_relationships(id, character_id, related_id, note, position)
 character_images(id, character_id, r2_key, caption, position)
 scene_characters(scene_id, character_id, line_count)
          -- derived on save. Deleted scenes have no rows until restored
-lore_entries(id, series_id, title, category, body)
+lore_entries(id, series_id, title, slug, category, summary, body, cover_key, tags text[],
+             aliases text[], version, created_by, updated_by, updated_at,
+             deleted_at, deleted_by, search_text)
+lore_revisions(id, lore_id, content jsonb, sealed, saved_by, saved_at)
+         -- same rule as scene_revisions. content is the whole draft
 reading_progress(user_id, season_id, scene_id, updated_at)  -- one row per person per season
 backups_log(id, user_id, created_at)
 ```
@@ -150,6 +154,20 @@ Pages use a board (`lib/structure/board.ts`, `useBoard`): a plain object outside
 - Hidden routes stay in the DOM, so a duplicate id or `[data-scene]` can belong to the page you left. The reader looks only inside its own root, and uses an effect rather than `:has()` to hide the top bar.
 - A printed episode gets its title through a named `@page` rule, because repeating table headers does not work here.
 - The backup leaves out `users`, so it can never hold password hashes. New tables go in `TABLES` in `lib/export/backup.ts`.
+
+### Search
+
+- `search_text` is a generated column on scenes, episodes, characters and lore, so no save, restore or import can leave it stale. Never write to it. To index another field, change the expression in a migration.
+- Text is cleaned the same way twice: `search_clean()` in Postgres and `cleanText` in `lib/search/query.ts`, which both drop apostrophes. Keep them matching.
+- Only `lexemes` output reaches a tsquery, and every value is a bound parameter. Never build SQL from a query string.
+- Soft-deleted rows are filtered in `lib/search/run.ts`. A new searchable table needs that too.
+- Beats have `id="beat-<id>"` in every view. `useBeatJump` scrolls to one and lights it up, looking only inside its own page.
+
+### Lore
+
+- `[[Name]]` and `[[Name|label]]` are parsed in `lib/lore/links.ts`, which also encodes them for the markdown renderer. `LoreMarkdown` is the one renderer, for the page and the live preview.
+- The markdown renderer drops raw HTML and unsafe links. Keep it that way: writers paste text from anywhere.
+- Lore autosave uses the same `createSaveQueue` as scenes. Writes go through `lib/lore/write.ts`, which checks the version and keeps a revision.
 
 ### Motion and performance rules
 

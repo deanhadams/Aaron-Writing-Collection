@@ -2,14 +2,16 @@
 
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LocationChips } from "@/components/library/location-chips";
 import { ScriptBeat } from "@/components/script/script-beat";
+import { useBeatJump } from "@/components/script/use-beat-jump";
 import { castLookups } from "@/lib/characters/lookup";
 import { fetchScene, sendScene } from "@/lib/editor/api";
 import { createSaveQueue, type SaveQueue } from "@/lib/editor/save-queue";
 import { createEditorStore, type EditorStore } from "@/lib/editor/store";
 import { SCENE_KIND_LABELS, sceneTitle, type SceneKind } from "@/lib/format";
+import { lastView, rememberView } from "@/lib/search/client";
 import type { SceneFields } from "@/lib/scenes/validate";
 import { ConflictDialog } from "./conflict-dialog";
 import { useDoc, type CastMember } from "./editor-context";
@@ -88,12 +90,21 @@ export function SceneWorkspace({
   cast: CastMember[];
 }) {
   const router = useRouter();
+  const page = useRef<HTMLElement>(null);
   const [{ store, queue }] = useState(() => createSession(sceneId, fields, version));
   const [isEditing, setEditing] = useState(false);
   const [isHistoryOpen, setHistoryOpen] = useState(false);
   const { colors: characterColors, links: characterLinks } = useMemo(() => castLookups(cast), [cast]);
 
   useLeaveGuard(queue);
+  useBeatJump(page, isEditing);
+
+  // Someone who was last editing lands back in the editor from a search result.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the address and localStorage only exist after mount
+    if (location.hash.startsWith("#beat-") && lastView() === "edit") setEditing(true);
+    else rememberView("scene");
+  }, []);
 
   // The page may be a cached or hidden copy, so check before trusting its version.
   const catchUp = useCallback(async () => {
@@ -118,11 +129,13 @@ export function SceneWorkspace({
   }, [catchUp, queue]);
 
   const startEditing = () => {
+    rememberView("edit");
     setEditing(true);
     void catchUp();
   };
 
   const stopEditing = async () => {
+    rememberView("scene");
     setEditing(false);
     await queue.flush();
     router.refresh();
@@ -152,6 +165,7 @@ export function SceneWorkspace({
       </div>
 
       <article
+        ref={page}
         data-kind={kind}
         className={`script-page rise mx-auto max-w-3xl font-script text-[17px] leading-relaxed ${
           isEditing ? "px-4 py-6 sm:px-8 sm:py-8" : "px-5 py-10 sm:px-20 sm:py-16"

@@ -8,6 +8,7 @@ import {
   characters,
   episodes,
   loreEntries,
+  loreRevisions,
   sceneRevisions,
   scenes,
   seasons,
@@ -31,6 +32,7 @@ const TABLES: [string, PgTable & { id: PgColumn }][] = [
   ["character_relationships", characterRelationships],
   ["character_images", characterImages],
   ["lore_entries", loreEntries],
+  ["lore_revisions", loreRevisions],
 ];
 
 export const backupFileName = (date: Date) => `aarons-writing-collection-backup-${date.toISOString().slice(0, 10)}.zip`;
@@ -54,13 +56,14 @@ async function* tablePages(db: Database, table: PgTable & { id: PgColumn }) {
 }
 
 async function imageKeys(db: Database) {
-  const [covers, portraits, gallery] = await Promise.all([
+  const [covers, loreCovers, portraits, gallery] = await Promise.all([
     db.select({ key: series.coverKey }).from(series),
+    db.select({ key: loreEntries.coverKey }).from(loreEntries),
     db.select({ key: characters.portraitKey }).from(characters),
     db.select({ key: characterImages.r2Key }).from(characterImages),
   ]);
 
-  const keys = [...covers, ...portraits, ...gallery].flatMap(({ key }) => (key ? [key] : []));
+  const keys = [...covers, ...loreCovers, ...portraits, ...gallery].flatMap(({ key }) => (key ? [key] : []));
   return [...new Set(keys)].sort().map((key) => ({ key, url: imageUrl(key) }));
 }
 

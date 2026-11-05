@@ -33,7 +33,7 @@ function ReaderBeat({ beat, colors }: { beat: Beat; colors: Colors }) {
     case "vo": {
       const { speaker, parenthetical, text } = spokenText(beat);
       return (
-        <p className="rd-line">
+        <p id={`beat-${beat.id}`} className="rd-line">
           {speaker && <SpeakerName speaker={speaker} colors={colors} />}
           {parenthetical && <span className="rd-aside"> ({parenthetical})</span>} {text}
         </p>
@@ -41,20 +41,28 @@ function ReaderBeat({ beat, colors }: { beat: Beat; colors: Colors }) {
     }
     case "visual":
       return (
-        <p className="rd-line rd-italic">
+        <p id={`beat-${beat.id}`} className="rd-line rd-italic">
           <strong className="rd-label">(VISUAL):</strong> {beat.text}
         </p>
       );
     case "sound":
       return (
-        <p className="rd-line rd-italic">
+        <p id={`beat-${beat.id}`} className="rd-line rd-italic">
           <strong className="rd-label">SOUND:</strong> {beat.text}
         </p>
       );
     case "action":
-      return <p className="rd-line rd-italic rd-action">{beat.text}</p>;
+      return (
+        <p id={`beat-${beat.id}`} className="rd-line rd-italic rd-action">
+          {beat.text}
+        </p>
+      );
     case "note":
-      return <p className="rd-line">{beat.text}</p>;
+      return (
+        <p id={`beat-${beat.id}`} className="rd-line">
+          {beat.text}
+        </p>
+      );
   }
 }
 

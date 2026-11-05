@@ -13,11 +13,13 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
+import { useBeatJump } from "@/components/script/use-beat-jump";
 import { ActionMenu, MenuItem } from "@/components/structure/action-menu";
 import { startDownload } from "@/lib/download";
 import { currentIndex, readerKey, scrollProgress, stepIndex } from "@/lib/reader/navigation";
 import type { Outline } from "@/lib/reader/read";
 import { readerVariables, settingsStore } from "@/lib/reader/settings";
+import { rememberView } from "@/lib/search/client";
 import { ContentsDrawer, SettingsDialog } from "./reader-dialogs";
 
 /** How far down the screen counts as "reading this". Jumps land at the 4rem scroll margin, just above it. */
@@ -80,7 +82,10 @@ export function ReaderShell({
 
   // An effect, not a CSS :has(), because hidden routes stay in the DOM and the
   // app's top bar must come back the moment the reader is left.
+  useBeatJump(root, children);
+
   useLayoutEffect(() => {
+    rememberView("reader");
     document.body.classList.add("is-reading");
     return () => document.body.classList.remove("is-reading");
   }, []);

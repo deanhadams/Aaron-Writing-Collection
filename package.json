@@ -15,6 +15,7 @@
     "db:seed": "tsx --env-file-if-exists=.env.local scripts/seed-users.ts",
     "db:seed:sample": "tsx --env-file-if-exists=.env.local scripts/seed-sample.ts",
     "import:season": "tsx --env-file-if-exists=.env.local scripts/import-season.ts",
+    "lore:seed": "tsx --env-file-if-exists=.env.local scripts/seed-lore.ts",
     "export:check": "tsx --env-file-if-exists=.env.local scripts/check-export.ts",
     "portraits:link": "tsx --env-file-if-exists=.env.local scripts/portraits-link.ts"
   },
@@ -31,7 +32,9 @@
     "next": "16.4.5",
     "pg": "^8.23.1",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.15",

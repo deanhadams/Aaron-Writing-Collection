@@ -1,4 +1,5 @@
 import { PGlite } from "@electric-sql/pglite";
+import { pg_trgm } from "@electric-sql/pglite/contrib/pg_trgm";
 import { drizzle } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
 import {
@@ -12,11 +13,24 @@ import {
 } from "@/lib/db/schema";
 import * as schema from "@/lib/db/schema";
 
+let migrated: Promise<File | Blob> | null = null;
+
+/** Migrates once per test file, then every test starts from a copy of that. */
+function migratedData() {
+  migrated ??= (async () => {
+    const client = new PGlite({ extensions: { pg_trgm } });
+    await migrate(drizzle(client), { migrationsFolder: "./drizzle" });
+    const data = await client.dumpDataDir("none");
+    await client.close();
+    return data;
+  })();
+  return migrated;
+}
+
 /** A real Postgres in memory, built from the same migrations as production. */
 export async function createTestDb() {
-  const db = drizzle(new PGlite(), { schema });
-  await migrate(db, { migrationsFolder: "./drizzle" });
-  return db;
+  const client = await PGlite.create({ extensions: { pg_trgm }, loadDataDir: await migratedData() });
+  return drizzle(client, { schema });
 }
 
 export async function seedScene(db: Awaited<ReturnType<typeof createTestDb>>, beats: Beat[] = []) {
