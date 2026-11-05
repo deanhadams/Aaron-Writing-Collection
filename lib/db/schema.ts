@@ -374,6 +374,19 @@ export const readingProgress = pgTable(
   (t) => [primaryKey({ columns: [t.userId, t.seasonId] })],
 );
 
+// Failed logins, for the rate limit. The key is a hash of an email or address.
+export const loginAttempts = pgTable(
+  "login_attempts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    key: text("key").notNull(),
+    attemptedAt: timestamp("attempted_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index().on(t.key, t.attemptedAt)],
+);
+
 // Who took a full backup, and when.
 export const backupsLog = pgTable("backups_log", {
   id: uuid("id").primaryKey().defaultRandom(),

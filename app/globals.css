@@ -2654,6 +2654,15 @@ h4 {
   }
 }
 
+.db-warning {
+  padding: 0.25rem 1rem;
+  background: var(--color-danger);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+}
+
 /* ---- Search ---- */
 
 .search-button {

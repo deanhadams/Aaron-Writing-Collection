@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getCurrentSession } from "@/lib/auth/current-session";
 import { Suspense } from "react";
+import { DbWarning } from "./layout/db-warning";
 import { LogoMark } from "./layout/logo-mark";
 import { NavLinks } from "./layout/nav-links";
 import { SearchPalette } from "./search/search-palette";
@@ -13,6 +14,8 @@ async function SignedInSearch() {
 
 export function TopBar() {
   return (
+    <>
+    <DbWarning />
     <header className="topbar">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:gap-6 sm:px-6">
         <Link href="/" aria-label="Aaron's Writing Collection" className="hidden shrink-0 items-center gap-2 min-[380px]:flex">
@@ -32,5 +35,6 @@ export function TopBar() {
         </div>
       </div>
     </header>
+    </>
   );
 }

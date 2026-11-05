@@ -2,11 +2,12 @@
 
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { LOGIN_PATH, safeNextPath } from "./protection";
+import { attemptKeys, clearFailures, clientIp, minutesBlocked, recordFailure } from "./rate-limit";
 import {
   createSessionToken,
   SESSION_COOKIE,
@@ -27,6 +28,12 @@ export async function login(
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
 
+  const keys = attemptKeys({ email, ip: clientIp(await headers()) });
+  const minutes = await minutesBlocked(db, keys);
+  if (minutes !== null) {
+    return { error: `Too many attempts. Please try again in ${minutes} ${minutes === 1 ? "minute" : "minutes"}.` };
+  }
+
   const [user] = await db
     .select()
     .from(users)
@@ -39,8 +46,11 @@ export async function login(
   );
 
   if (!user || !matches) {
+    await recordFailure(db, keys);
     return { error: "Wrong email or password." };
   }
+
+  await clearFailures(db, keys[0]);
 
   const token = await createSessionToken({ userId: user.id, name: user.name });
   (await cookies()).set(SESSION_COOKIE, token, sessionCookieOptions);

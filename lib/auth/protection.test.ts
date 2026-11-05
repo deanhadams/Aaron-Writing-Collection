@@ -28,6 +28,12 @@ describe("decideAccess", () => {
     expect(anonymous("/api/scenes/1")).toEqual({ action: "unauthorized" });
   });
 
+  it("lets anyone reach the health check, and nothing beside it", () => {
+    expect(anonymous("/api/health")).toEqual({ action: "allow" });
+    expect(anonymous("/api/health/extra")).toEqual({ action: "unauthorized" });
+    expect(anonymous("/api/healthz")).toEqual({ action: "unauthorized" });
+  });
+
   it("does not treat lookalike paths as public or as API", () => {
     expect(anonymous("/login/extra").action).toBe("redirect");
     expect(anonymous("/loginx").action).toBe("redirect");

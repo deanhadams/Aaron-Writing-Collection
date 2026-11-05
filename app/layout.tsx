@@ -16,6 +16,7 @@ const courierPrime = Courier_Prime({
 export const metadata: Metadata = {
   title: "Aaron's Writing Collection",
   description: "A private writing studio for anime screenplays.",
+  robots: { index: false, follow: false },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

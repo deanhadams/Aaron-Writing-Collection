@@ -59,6 +59,7 @@ lore_revisions(id, lore_id, content jsonb, sealed, saved_by, saved_at)
          -- same rule as scene_revisions. content is the whole draft
 reading_progress(user_id, season_id, scene_id, updated_at)  -- one row per person per season
 backups_log(id, user_id, created_at)
+login_attempts(id, key, attempted_at)  -- failed logins. The key is a hash, never an email
 ```
 
 ## Design
@@ -169,6 +170,14 @@ Pages use a board (`lib/structure/board.ts`, `useBoard`): a plain object outside
 - The markdown renderer drops raw HTML and unsafe links. Keep it that way: writers paste text from anywhere.
 - Lore autosave uses the same `createSaveQueue` as scenes. Writes go through `lib/lore/write.ts`, which checks the version and keeps a revision.
 
+### Deployment and security
+
+- `lib/env.ts` is the one list of environment variables, checked as the server starts. A new variable goes there and in `.env.example`. Messages name the variable and never its value.
+- `/login`, `/api/health` and `/robots.txt` are the only public routes. `lib/security/access.test.ts` reads the `app` folder and fails if a new route is reachable without a session.
+- Redirects in `proxy.ts` must use `NextResponse.redirect` with an absolute URL. A relative `Location` crashes Next's proxy with a 500, and only a real server shows it: calling `proxy()` directly in a test does not. `e2e/deploy.spec.ts` covers this.
+- The CSP is built per request in `proxy.ts`, from `lib/security/headers.ts`. A new outside host for images or requests must be added there. Lore images from other sites are blocked by it on purpose.
+- `npm run db:migrate` uses production dependencies only, because Railway runs it before each deploy.
+
 ### Motion and performance rules
 
 - Animate `transform` and `opacity` only, under 300ms for interactions. Put glows on a pseudo-element and fade its opacity rather than animating `box-shadow`.
@@ -184,5 +193,5 @@ Pages use a board (`lib/structure/board.ts`, `useBoard`): a plain object outside
 - Every scene save checks a version number and writes a revision row.
 - Keep components small.
 - Write simple tests for the importer and the save logic.
-- Run `npm run test:e2e` after any UI change, in dev mode as well as against a production build. Strict Mode runs effects twice only in dev, so each mode hides bugs the other shows.
+- Run `npm run test:e2e` after any UI change, and `npm run build` then `npm run test:e2e:prod` as well. Strict Mode runs effects twice only in dev, so each mode hides bugs the other shows.
 - Commit after each step with a clear message.

@@ -34,6 +34,8 @@ export async function createSessionToken(session: Session): Promise<string> {
   return new SignJWT({ name: session.name })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(session.userId)
+    // A new id each login, so no two sessions share a token.
+    .setJti(crypto.randomUUID())
     .setIssuedAt()
     .setExpirationTime(`${SESSION_DAYS}d`)
     .sign(getKey());

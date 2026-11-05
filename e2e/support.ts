@@ -112,6 +112,11 @@ export async function clearBackupLog(since: Date) {
   await db.delete(backupsLog).where(gte(backupsLog.createdAt, since));
 }
 
+export async function clearLoginAttempts(since: Date) {
+  const { db, loginAttempts } = await database();
+  await db.delete(loginAttempts).where(gte(loginAttempts.attemptedAt, since));
+}
+
 export async function signInCookie(url: string) {
   const { db, users } = await database();
   const [user] = await db.select().from(users).limit(1);
@@ -119,7 +124,8 @@ export async function signInCookie(url: string) {
 }
 
 // Characters with no portrait yet are ordinary 404s from the bucket.
-const isExpected = (url: string, status: number) => url.includes(".r2.dev") || status === 409 || status === 422;
+const isExpected = (url: string, status: number) =>
+  url.includes(".r2.dev") || status === 409 || status === 422 || (status === 404 && url.endsWith("/not-a-real-page"));
 
 export const test = base.extend<{ world: World }>({
   world: async ({}, provide) => {

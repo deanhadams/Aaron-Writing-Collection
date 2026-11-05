@@ -1,5 +1,8 @@
 export const LOGIN_PATH = "/login";
 
+/** Exact paths, so nothing else slips through. Only Railway's health check needs this. */
+const PUBLIC_PATHS = new Set(["/api/health"]);
+
 export type AccessDecision =
   | { action: "allow" }
   | { action: "redirect"; to: string }
@@ -24,7 +27,7 @@ export function decideAccess({
     return isAuthenticated ? { action: "redirect", to: "/" } : { action: "allow" };
   }
 
-  if (isAuthenticated) return { action: "allow" };
+  if (isAuthenticated || PUBLIC_PATHS.has(pathname)) return { action: "allow" };
   if (isApiPath(pathname)) return { action: "unauthorized" };
   if (pathname === "/") return { action: "redirect", to: LOGIN_PATH };
 
